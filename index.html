@@ -1068,6 +1068,9 @@ function printResults(mode) {
   <div id="tabQuotesContent" class="hidden">
     <div class="card">
       <h2 style="margin-top:0">📋 Moje wyceny</h2>
+      <div style="margin-bottom:12px;">
+        <button class="btn-secondary" onclick="switchTab('calc')">← Powrót do kalkulatora</button>
+      </div>
       <div class="row" style="margin-bottom:12px;">
         <div class="col">
           <label>Filtruj status</label>
@@ -1398,6 +1401,14 @@ async function saveQuote() {
   let items = [];
   let total = 0;
   
+  // Get client info from prompt if not already set
+  let clientName = prompt('Nazwa klienta / firma:');
+  if (!clientName) clientName = '';
+  let clientEmail = prompt('Email klienta:');
+  if (!clientEmail) clientEmail = '';
+  let clientPhone = prompt('Telefon klienta:');
+  if (!clientPhone) clientPhone = '';
+  
   if (type === 'overprint') {
     const cards = document.querySelectorAll('#overprintItems .item-card');
     cards.forEach(card => {
@@ -1430,12 +1441,15 @@ async function saveQuote() {
   
   const refNum = 'PP-' + new Date().toISOString().slice(0,10).replace(/-/g,'') + '-' + Math.floor(Math.random()*900+100);
   
-  const { data, error } = await supabase
+  const { data, error } = await supabaseClient
     .from('pp_quotes')
     .insert([{
       reference_number: refNum,
       user_id: currentUser.id,
       type: type,
+      client_name: clientName,
+      client_email: clientEmail,
+      client_phone: clientPhone,
       items: items,
       total_netto: total,
       currency: fullprintCurrency,
@@ -1468,13 +1482,16 @@ async function loadQuotes() {
     }
   });
   
-  let html = '<table class="result-table"><thead><tr><th>Nr ref</th><th>Typ</th><th>Data</th><th>Wartość</th><th>Status</th><th>Akcje</th></tr></thead><tbody>';
+  let html = '<table class="result-table"><thead><tr><th>Nr ref</th><th>Typ</th><th>Klient</th><th>Email</th><th>Telefon</th><th>Data</th><th>Wartość</th><th>Status</th><th>Akcje</th></tr></thead><tbody>';
   data.forEach(q => {
     const statusClass = q.status === 'draft' ? 'gray' : q.status === 'sent' ? 'blue' : q.status === 'waiting' ? 'yellow' : q.status === 'expired' ? 'red' : q.status === 'responded' ? 'green' : q.status === 'won' ? 'gold' : 'gray';
     const statusLabel = {draft:'Robocza',sent:'Wysłana',waiting:'Czeka',expired:'Przeterm.',responded:'Odpowiedź',won:'Wygrana',lost:'Przegrana'}[q.status] || q.status;
     html += `<tr style="background:${statusColor(q.status)};">
       <td><strong>${q.reference_number}</strong></td>
       <td>${q.type === 'overprint' ? 'Overprint' : 'Fullprint'}</td>
+      <td>${q.client_name || '-'}</td>
+      <td>${q.client_email || '-'}</td>
+      <td>${q.client_phone || '-'}</td>
       <td>${new Date(q.created_at).toLocaleDateString('pl-PL')}</td>
       <td>${q.total_netto.toFixed(2)} ${q.currency}</td>
       <td><span style="padding:2px 8px;border-radius:4px;background:${statusColor(q.status)};color:#fff;font-size:0.8rem;">${statusLabel}</span></td>
@@ -1482,6 +1499,7 @@ async function loadQuotes() {
         <button class="btn-small btn-secondary" onclick="showQuoteDetail('${q.id}')">Szczegóły</button>
         <button class="btn-small btn-primary" onclick="updateQuoteStatus('${q.id}', 'sent')">Wysłano</button>
         <button class="btn-small btn-success" onclick="updateQuoteStatus('${q.id}', 'won')">Wygrana</button>
+        <button class="btn-small btn-danger" onclick="deleteQuote('${q.id}')">Usuń</button>
       </td>
     </tr>`;
   });
@@ -1503,6 +1521,14 @@ async function updateQuoteStatus(id, newStatus) {
 function showQuoteDetail(id) {
   // Show detail modal - simplified for now
   alert('Szczegóły wyceny ' + id);
+}
+
+async function deleteQuote(id) {
+  if (!confirm('Czy na pewno chcesz usunąć tę wycenę?')) return;
+  if (!currentUser) return;
+  const { error } = await supabaseClient.from('pp_quotes').delete().eq('id', id);
+  if (error) alert('Błąd: ' + error.message);
+  else loadQuotes();
 }
 
 /* ==================== FEEDBACK ==================== */
@@ -1547,7 +1573,7 @@ async function loadFeedback() {
 function addSaveButtons() {
   // Add save button to overprint results
   const opActions = document.getElementById('overprintPrintActions');
-  if (opActions && !opActions.querySelector('.save-btn')) {
+  if (opActions && opActions.style.display !== 'none' && !opActions.querySelector('.save-btn')) {
     const btn = document.createElement('button');
     btn.className = 'btn-success save-btn';
     btn.style.marginLeft = '8px';
@@ -1557,7 +1583,7 @@ function addSaveButtons() {
   }
   // Add save button to fullprint results
   const fpActions = document.getElementById('fullprintPrintActions');
-  if (fpActions && !fpActions.querySelector('.save-btn')) {
+  if (fpActions && fpActions.style.display !== 'none' && !fpActions.querySelector('.save-btn')) {
     const btn = document.createElement('button');
     btn.className = 'btn-success save-btn';
     btn.style.marginLeft = '8px';
@@ -1571,12 +1597,12 @@ function addSaveButtons() {
 const originalCalcOverprint = calcOverprint;
 calcOverprint = function() {
   originalCalcOverprint();
-  addSaveButtons();
+  setTimeout(addSaveButtons, 100);
 };
 const originalCalcFullprint = calcFullprint;
 calcFullprint = function() {
   originalCalcFullprint();
-  addSaveButtons();
+  setTimeout(addSaveButtons, 100);
 };
 
 /* ==================== INIT ==================== */
