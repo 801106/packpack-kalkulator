@@ -1271,8 +1271,18 @@ function fetchNbp() {
 const SUPABASE_URL = 'https://srwhepvvxzxfvcbnztwq.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyd2hlcHZ2eHp4ZnZjYm56dHdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxNDc1OTEsImV4cCI6MjA5NzcyMzU5MX0.E9mMn0m-EPOy4JSsLzqV4zeGxvm5sWJX-3YswgZZdyE';
 
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+let supabase = null;
 let currentUser = null;
+
+function initSupabase() {
+  if (typeof window.supabase === 'undefined') {
+    console.warn('Supabase library not loaded yet. Retrying in 500ms...');
+    setTimeout(initSupabase, 500);
+    return;
+  }
+  supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  initAuth();
+}
 
 async function initAuth() {
   const { data: { session } } = await supabase.auth.getSession();
@@ -1572,7 +1582,7 @@ calcFullprint = function() {
 /* ==================== INIT ==================== */
 
 window.addEventListener('load', () => {
-  initAuth();
+  initSupabase();
   addOverprintItem();
   addFullprintItem();
 });
