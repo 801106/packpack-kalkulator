@@ -1271,7 +1271,7 @@ function fetchNbp() {
 const SUPABASE_URL = 'https://srwhepvvxzxfvcbnztwq.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyd2hlcHZ2eHp4ZnZjYm56dHdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxNDc1OTEsImV4cCI6MjA5NzcyMzU5MX0.E9mMn0m-EPOy4JSsLzqV4zeGxvm5sWJX-3YswgZZdyE';
 
-let supabase = null;
+let supabaseClient = null;
 let currentUser = null;
 
 function initSupabase() {
@@ -1280,12 +1280,12 @@ function initSupabase() {
     setTimeout(initSupabase, 500);
     return;
   }
-  supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   initAuth();
 }
 
 async function initAuth() {
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { session } } = await supabaseClient.auth.getSession();
   if (session?.user) {
     currentUser = session.user;
     showLoggedIn(session.user.email);
@@ -1295,7 +1295,7 @@ async function initAuth() {
     showLoggedOut();
   }
   
-  supabase.auth.onAuthStateChange((event, session) => {
+  supabaseClient.auth.onAuthStateChange((event, session) => {
     if (session?.user) {
       currentUser = session.user;
       showLoggedIn(session.user.email);
@@ -1327,7 +1327,7 @@ async function signIn() {
   const statusEl = document.getElementById('authStatus');
   if (!email || !password) { statusEl.innerHTML = '<span class="status err">Wypełnij email i hasło.</span>'; return; }
   
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
   if (error) { statusEl.innerHTML = '<span class="status err">' + error.message + '</span>'; }
   else { statusEl.innerHTML = '<span class="status ok">Zalogowano!</span>'; }
 }
@@ -1339,13 +1339,13 @@ async function signUp() {
   if (!email || !password) { statusEl.innerHTML = '<span class="status err">Wypełnij email i hasło.</span>'; return; }
   if (password.length < 6) { statusEl.innerHTML = '<span class="status err">Hasło musi mieć min. 6 znaków.</span>'; return; }
   
-  const { data, error } = await supabase.auth.signUp({ email, password });
+  const { data, error } = await supabaseClient.auth.signUp({ email, password });
   if (error) { statusEl.innerHTML = '<span class="status err">' + error.message + '</span>'; }
   else { statusEl.innerHTML = '<span class="status ok">Konto utworzone! Sprawdź email i zaloguj się.</span>'; }
 }
 
 async function signOut() {
-  await supabase.auth.signOut();
+  await supabaseClient.auth.signOut();
   document.getElementById('authStatus').innerHTML = '';
 }
 
@@ -1354,7 +1354,7 @@ async function resetPassword() {
   const statusEl = document.getElementById('authStatus');
   if (!email) { statusEl.innerHTML = '<span class="status err">Wpisz email, aby zresetować hasło.</span>'; return; }
   
-  const { error } = await supabase.auth.resetPasswordForEmail(email);
+  const { error } = await supabaseClient.auth.resetPasswordForEmail(email);
   if (error) { statusEl.innerHTML = '<span class="status err">' + error.message + '</span>'; }
   else { statusEl.innerHTML = '<span class="status ok">Link do resetu hasła wysłany na email.</span>'; }
 }
@@ -1451,7 +1451,7 @@ async function loadQuotes() {
   if (!currentUser) return;
   const filter = document.getElementById('quoteFilter').value;
   
-  let query = supabase.from('pp_quotes').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
+  let query = supabaseClient.from('pp_quotes').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
   if (filter !== 'all') query = query.eq('status', filter);
   
   const { data, error } = await query;
@@ -1495,7 +1495,7 @@ function statusColor(status) {
 
 async function updateQuoteStatus(id, newStatus) {
   if (!currentUser) return;
-  const { error } = await supabase.from('pp_quotes').update({ status: newStatus, updated_at: new Date().toISOString() }).eq('id', id);
+  const { error } = await supabaseClient.from('pp_quotes').update({ status: newStatus, updated_at: new Date().toISOString() }).eq('id', id);
   if (error) alert('Błąd: ' + error.message);
   else loadQuotes();
 }
@@ -1514,7 +1514,7 @@ async function submitFeedback() {
   const statusEl = document.getElementById('fbStatus');
   if (!content) { statusEl.innerHTML = '<span class="status err">Wpisz treść komentarza.</span>'; return; }
   
-  const { error } = await supabase.from('pp_feedback').insert([{
+  const { error } = await supabaseClient.from('pp_feedback').insert([{
     user_id: currentUser.id,
     user_name: currentUser.email,
     category: category,
@@ -1527,7 +1527,7 @@ async function submitFeedback() {
 
 async function loadFeedback() {
   if (!currentUser) return;
-  const { data, error } = await supabase.from('pp_feedback').select('*').order('created_at', { ascending: false });
+  const { data, error } = await supabaseClient.from('pp_feedback').select('*').order('created_at', { ascending: false });
   const list = document.getElementById('fbList');
   if (error || !data || !data.length) { list.innerHTML = '<p style="color:#666;">Brak komentarzy.</p>'; return; }
   
