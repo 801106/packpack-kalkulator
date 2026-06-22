@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PackPack Kalkulator</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
 
@@ -168,6 +169,47 @@
     </div>
     <p style="margin-top:10px;color:#666;font-size:0.95rem;">Kalkulator wycen — Overprint & Fullprint</p>
   </header>
+
+  <!-- AUTH SECTION -->
+  <div id="authSection" class="card">
+    <div id="authLoggedOut">
+      <h3 style="margin-top:0">Logowanie</h3>
+      <div class="row" style="gap:16px;">
+        <div class="col">
+          <label>Email</label>
+          <input type="email" id="authEmail" placeholder="twoj@email.pl">
+        </div>
+        <div class="col">
+          <label>Hasło</label>
+          <input type="password" id="authPassword" placeholder="••••••••">
+        </div>
+        <div class="col" style="min-width:120px;">
+          <label>&nbsp;</label>
+          <button class="btn-primary" onclick="signIn()" style="width:100%">Zaloguj</button>
+        </div>
+      </div>
+      <p style="margin-top:10px;font-size:0.85rem;color:#666;">
+        Nie masz konta? <a href="#" onclick="signUp()" style="color:var(--accent);">Zarejestruj się</a> | 
+        <a href="#" onclick="resetPassword()" style="color:var(--accent);">Zapomniałem hasła</a>
+      </p>
+      <div id="authStatus" style="margin-top:8px;"></div>
+    </div>
+    <div id="authLoggedIn" style="display:none;">
+      <div class="row" style="justify-content:space-between;align-items:center;">
+        <span>Zalogowany jako: <strong id="authUserName"></strong></span>
+        <button class="btn-secondary btn-small" onclick="signOut()">Wyloguj</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="card no-print" style="padding:10px;">
+    <div class="mode-toggle" style="margin-bottom:0;">
+      <button id="tabCalc" class="btn-primary active" onclick="switchTab('calc')">🧮 Kalkulator</button>
+      <button id="tabQuotes" class="btn-secondary" onclick="switchTab('quotes')">📋 Moje wyceny</button>
+      <button id="tabFeedback" class="btn-secondary" onclick="switchTab('feedback')">💬 Feedback</button>
+    </div>
+  </div>
 
   <div class="card">
     <div class="mode-toggle">
@@ -1021,6 +1063,65 @@ function printResults(mode) {
       kontakt@packpack.pl | www.packpack.pl
     </div>
   </div>
+
+  <!-- QUOTES LIST SECTION -->
+  <div id="tabQuotesContent" class="hidden">
+    <div class="card">
+      <h2 style="margin-top:0">📋 Moje wyceny</h2>
+      <div class="row" style="margin-bottom:12px;">
+        <div class="col">
+          <label>Filtruj status</label>
+          <select id="quoteFilter" onchange="loadQuotes()">
+            <option value="all">Wszystkie</option>
+            <option value="draft">Robocze</option>
+            <option value="sent">Wysłane</option>
+            <option value="waiting">Czekające</option>
+            <option value="expired">Przeterminowane</option>
+            <option value="responded">Odpowiedziane</option>
+            <option value="won">Wygrane</option>
+            <option value="lost">Przegrane</option>
+          </select>
+        </div>
+        <div class="col">
+          <label>&nbsp;</label>
+          <button class="btn-primary" onclick="loadQuotes()">🔄 Odśwież</button>
+        </div>
+      </div>
+      <div id="quotesList" style="overflow-x:auto;">
+        <p class="status info">Zaloguj się, aby zobaczyć wyceny.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- FEEDBACK SECTION -->
+  <div id="tabFeedbackContent" class="hidden">
+    <div class="card">
+      <h2 style="margin-top:0">💬 Feedback — Udoskonalmy kalkulator</h2>
+      <p style="color:#666;font-size:0.9rem;">Zgłoś błąd, zaproponuj funkcję lub zostaw komentarz.</p>
+      <div class="row" style="gap:12px;margin-top:12px;">
+        <div class="col">
+          <label>Kategoria</label>
+          <select id="fbCategory">
+            <option value="general">Ogólne</option>
+            <option value="bug">Błąd</option>
+            <option value="feature">Propozycja funkcji</option>
+          </select>
+        </div>
+        <div class="col-full">
+          <label>Twój komentarz</label>
+          <textarea id="fbContent" rows="3" placeholder="Co chcesz zgłosić?"></textarea>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn-primary" onclick="submitFeedback()">Wyślij feedback</button>
+      </div>
+      <div id="fbStatus"></div>
+      <div id="fbList" style="margin-top:20px;">
+        <p style="color:#666;font-size:0.9rem;">Zaloguj się, aby zobaczyć wszystkie komentarze.</p>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>`;
 
@@ -1164,8 +1265,378 @@ function fetchNbp() {
 
 /* ==================== INICJALIZACJA ==================== */
 
+
+/* ==================== SUPABASE ==================== */
+
+const SUPABASE_URL = 'https://srwhepvvxzxfvcbnztwq.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyd2hlcHZ2eHp4ZnZjYm56dHdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxNDc1OTEsImV4cCI6MjA5NzcyMzU5MX0.E9mMn0m-EPOy4JSsLzqV4zeGxvm5sWJX-3YswgZZdyE';
+
+const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+let currentUser = null;
+
+async function initAuth() {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session?.user) {
+    currentUser = session.user;
+    showLoggedIn(session.user.email);
+    loadQuotes();
+    loadFeedback();
+  } else {
+    showLoggedOut();
+  }
+  
+  supabase.auth.onAuthStateChange((event, session) => {
+    if (session?.user) {
+      currentUser = session.user;
+      showLoggedIn(session.user.email);
+      loadQuotes();
+      loadFeedback();
+    } else {
+      currentUser = null;
+      showLoggedOut();
+    }
+  });
+}
+
+function showLoggedIn(email) {
+  document.getElementById('authLoggedOut').style.display = 'none';
+  document.getElementById('authLoggedIn').style.display = 'block';
+  document.getElementById('authUserName').textContent = email;
+}
+
+function showLoggedOut() {
+  document.getElementById('authLoggedOut').style.display = 'block';
+  document.getElementById('authLoggedIn').style.display = 'none';
+  document.getElementById('quotesList').innerHTML = '<p class="status info">Zaloguj się, aby zobaczyć wyceny.</p>';
+  document.getElementById('fbList').innerHTML = '<p style="color:#666;font-size:0.9rem;">Zaloguj się, aby zobaczyć wszystkie komentarze.</p>';
+}
+
+async function signIn() {
+  const email = document.getElementById('authEmail').value.trim();
+  const password = document.getElementById('authPassword').value;
+  const statusEl = document.getElementById('authStatus');
+  if (!email || !password) { statusEl.innerHTML = '<span class="status err">Wypełnij email i hasło.</span>'; return; }
+  
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) { statusEl.innerHTML = '<span class="status err">' + error.message + '</span>'; }
+  else { statusEl.innerHTML = '<span class="status ok">Zalogowano!</span>'; }
+}
+
+async function signUp() {
+  const email = document.getElementById('authEmail').value.trim();
+  const password = document.getElementById('authPassword').value;
+  const statusEl = document.getElementById('authStatus');
+  if (!email || !password) { statusEl.innerHTML = '<span class="status err">Wypełnij email i hasło.</span>'; return; }
+  if (password.length < 6) { statusEl.innerHTML = '<span class="status err">Hasło musi mieć min. 6 znaków.</span>'; return; }
+  
+  const { data, error } = await supabase.auth.signUp({ email, password });
+  if (error) { statusEl.innerHTML = '<span class="status err">' + error.message + '</span>'; }
+  else { statusEl.innerHTML = '<span class="status ok">Konto utworzone! Sprawdź email i zaloguj się.</span>'; }
+}
+
+async function signOut() {
+  await supabase.auth.signOut();
+  document.getElementById('authStatus').innerHTML = '';
+}
+
+async function resetPassword() {
+  const email = document.getElementById('authEmail').value.trim();
+  const statusEl = document.getElementById('authStatus');
+  if (!email) { statusEl.innerHTML = '<span class="status err">Wpisz email, aby zresetować hasło.</span>'; return; }
+  
+  const { error } = await supabase.auth.resetPasswordForEmail(email);
+  if (error) { statusEl.innerHTML = '<span class="status err">' + error.message + '</span>'; }
+  else { statusEl.innerHTML = '<span class="status ok">Link do resetu hasła wysłany na email.</span>'; }
+}
+
+/* ==================== TABS ==================== */
+
+function switchTab(tab) {
+  document.getElementById('tabCalc').className = tab === 'calc' ? 'btn-primary active' : 'btn-secondary';
+  document.getElementById('tabQuotes').className = tab === 'quotes' ? 'btn-primary active' : 'btn-secondary';
+  document.getElementById('tabFeedback').className = tab === 'feedback' ? 'btn-primary active' : 'btn-secondary';
+  
+  const calcContent = document.querySelectorAll('.mode-section, .card:not(#authSection):not(#tabQuotesContent):not(#tabFeedbackContent)');
+  // Show/hide calculator content (all cards except auth, quotes, feedback)
+  const allCards = document.querySelectorAll('.card');
+  allCards.forEach(card => {
+    if (card.id === 'authSection') return;
+    if (tab === 'calc') {
+      if (!card.closest('#tabQuotesContent') && !card.closest('#tabFeedbackContent')) {
+        card.style.display = '';
+      }
+    } else {
+      if (!card.closest('#tabQuotesContent') && !card.closest('#tabFeedbackContent')) {
+        card.style.display = 'none';
+      }
+    }
+  });
+  
+  document.getElementById('tabQuotesContent').classList.toggle('hidden', tab !== 'quotes');
+  document.getElementById('tabFeedbackContent').classList.toggle('hidden', tab !== 'feedback');
+  
+  if (tab === 'quotes' && currentUser) loadQuotes();
+  if (tab === 'feedback' && currentUser) loadFeedback();
+}
+
+/* ==================== SAVE / LOAD QUOTES ==================== */
+
+async function saveQuote() {
+  if (!currentUser) { alert('Zaloguj się, aby zapisać wycenę.'); return; }
+  
+  const type = mode;
+  let items = [];
+  let total = 0;
+  
+  if (type === 'overprint') {
+    const cards = document.querySelectorAll('#overprintItems .item-card');
+    cards.forEach(card => {
+      items.push({
+        product: card.querySelector('.op-product').value,
+        size: card.querySelector('.op-size').value,
+        price: parseFloat(card.querySelector('.op-price').value) || 0,
+        print: card.querySelector('.op-print').value,
+        sides: card.querySelector('.op-sides').value,
+        qty: parseInt(card.querySelector('.op-qty').value, 10) || 0
+      });
+    });
+    const results = document.getElementById('overprintResults');
+    const summary = results.querySelector('.summary');
+    if (summary) total = parseFloat(summary.textContent.replace(/[^\d,]/g, '').replace(',', '.')) || 0;
+  } else {
+    const cards = document.querySelectorAll('#fullprintItems .item-card');
+    cards.forEach(card => {
+      items.push({
+        material: card.querySelector('.fp-material').value,
+        size: card.querySelector('.fp-size').value,
+        price: parseFloat(card.querySelector('.fp-price').value) || 0,
+        qty: parseInt(card.querySelector('.fp-qty').value, 10) || 0
+      });
+    });
+    const results = document.getElementById('fullprintResults');
+    const summary = results.querySelector('.summary');
+    if (summary) total = parseFloat(summary.textContent.replace(/[^\d,]/g, '').replace(',', '.')) || 0;
+  }
+  
+  const refNum = 'PP-' + new Date().toISOString().slice(0,10).replace(/-/g,'') + '-' + Math.floor(Math.random()*900+100);
+  
+  const { data, error } = await supabase
+    .from('pp_quotes')
+    .insert([{
+      reference_number: refNum,
+      user_id: currentUser.id,
+      type: type,
+      items: items,
+      total_netto: total,
+      currency: fullprintCurrency,
+      status: 'draft'
+    }])
+    .select();
+  
+  if (error) { alert('Błąd zapisu: ' + error.message); }
+  else { alert('Wycena zapisana! Nr: ' + refNum); switchTab('quotes'); }
+}
+
+async function loadQuotes() {
+  if (!currentUser) return;
+  const filter = document.getElementById('quoteFilter').value;
+  
+  let query = supabase.from('pp_quotes').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
+  if (filter !== 'all') query = query.eq('status', filter);
+  
+  const { data, error } = await query;
+  const list = document.getElementById('quotesList');
+  if (error) { list.innerHTML = '<p class="status err">Błąd: ' + error.message + '</p>'; return; }
+  if (!data || !data.length) { list.innerHTML = '<p class="status info">Brak wycen.</p>'; return; }
+  
+  // Check expired
+  const now = new Date();
+  data.forEach(q => {
+    if (q.status === 'sent' && q.sent_at) {
+      const days = (now - new Date(q.sent_at)) / (1000*60*60*24);
+      if (days > 3) updateQuoteStatus(q.id, 'expired');
+    }
+  });
+  
+  let html = '<table class="result-table"><thead><tr><th>Nr ref</th><th>Typ</th><th>Data</th><th>Wartość</th><th>Status</th><th>Akcje</th></tr></thead><tbody>';
+  data.forEach(q => {
+    const statusClass = q.status === 'draft' ? 'gray' : q.status === 'sent' ? 'blue' : q.status === 'waiting' ? 'yellow' : q.status === 'expired' ? 'red' : q.status === 'responded' ? 'green' : q.status === 'won' ? 'gold' : 'gray';
+    const statusLabel = {draft:'Robocza',sent:'Wysłana',waiting:'Czeka',expired:'Przeterm.',responded:'Odpowiedź',won:'Wygrana',lost:'Przegrana'}[q.status] || q.status;
+    html += `<tr style="background:${statusColor(q.status)};">
+      <td><strong>${q.reference_number}</strong></td>
+      <td>${q.type === 'overprint' ? 'Overprint' : 'Fullprint'}</td>
+      <td>${new Date(q.created_at).toLocaleDateString('pl-PL')}</td>
+      <td>${q.total_netto.toFixed(2)} ${q.currency}</td>
+      <td><span style="padding:2px 8px;border-radius:4px;background:${statusColor(q.status)};color:#fff;font-size:0.8rem;">${statusLabel}</span></td>
+      <td>
+        <button class="btn-small btn-secondary" onclick="showQuoteDetail('${q.id}')">Szczegóły</button>
+        <button class="btn-small btn-primary" onclick="updateQuoteStatus('${q.id}', 'sent')">Wysłano</button>
+        <button class="btn-small btn-success" onclick="updateQuoteStatus('${q.id}', 'won')">Wygrana</button>
+      </td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  list.innerHTML = html;
+}
+
+function statusColor(status) {
+  return {draft:'#999',sent:'#2196F3',waiting:'#FF9800',expired:'#f44336',responded:'#4CAF50',won:'#FFD700',lost:'#9e9e9e'}[status] || '#999';
+}
+
+async function updateQuoteStatus(id, newStatus) {
+  if (!currentUser) return;
+  const { error } = await supabase.from('pp_quotes').update({ status: newStatus, updated_at: new Date().toISOString() }).eq('id', id);
+  if (error) alert('Błąd: ' + error.message);
+  else loadQuotes();
+}
+
+function showQuoteDetail(id) {
+  // Show detail modal - simplified for now
+  alert('Szczegóły wyceny ' + id);
+}
+
+/* ==================== FEEDBACK ==================== */
+
+async function submitFeedback() {
+  if (!currentUser) { alert('Zaloguj się, aby wysłać feedback.'); return; }
+  const category = document.getElementById('fbCategory').value;
+  const content = document.getElementById('fbContent').value.trim();
+  const statusEl = document.getElementById('fbStatus');
+  if (!content) { statusEl.innerHTML = '<span class="status err">Wpisz treść komentarza.</span>'; return; }
+  
+  const { error } = await supabase.from('pp_feedback').insert([{
+    user_id: currentUser.id,
+    user_name: currentUser.email,
+    category: category,
+    content: content
+  }]);
+  
+  if (error) { statusEl.innerHTML = '<span class="status err">Błąd: ' + error.message + '</span>'; }
+  else { statusEl.innerHTML = '<span class="status ok">Feedback wysłany! Dziękujemy.</span>'; document.getElementById('fbContent').value = ''; loadFeedback(); }
+}
+
+async function loadFeedback() {
+  if (!currentUser) return;
+  const { data, error } = await supabase.from('pp_feedback').select('*').order('created_at', { ascending: false });
+  const list = document.getElementById('fbList');
+  if (error || !data || !data.length) { list.innerHTML = '<p style="color:#666;">Brak komentarzy.</p>'; return; }
+  
+  let html = '<h3>Wszystkie komentarze</h3>';
+  data.forEach(fb => {
+    const catLabel = {bug:'🐛 Błąd',feature:'✨ Funkcja',general:'💬 Ogólne'}[fb.category] || '💬';
+    html += `<div style="border:1px solid #e0e0e0;border-radius:8px;padding:10px;margin-bottom:8px;background:#fafafa;">
+      <div style="font-size:0.8rem;color:#666;">${catLabel} · ${fb.user_name} · ${new Date(fb.created_at).toLocaleDateString('pl-PL')}</div>
+      <div style="margin-top:4px;">${fb.content}</div>
+    </div>`;
+  });
+  list.innerHTML = html;
+}
+
+/* ==================== SAVE BUTTONS ==================== */
+
+function addSaveButtons() {
+  // Add save button to overprint results
+  const opActions = document.getElementById('overprintPrintActions');
+  if (opActions && !opActions.querySelector('.save-btn')) {
+    const btn = document.createElement('button');
+    btn.className = 'btn-success save-btn';
+    btn.style.marginLeft = '8px';
+    btn.textContent = '💾 Zapisz wycenę';
+    btn.onclick = saveQuote;
+    opActions.appendChild(btn);
+  }
+  // Add save button to fullprint results
+  const fpActions = document.getElementById('fullprintPrintActions');
+  if (fpActions && !fpActions.querySelector('.save-btn')) {
+    const btn = document.createElement('button');
+    btn.className = 'btn-success save-btn';
+    btn.style.marginLeft = '8px';
+    btn.textContent = '💾 Zapisz wycenę';
+    btn.onclick = saveQuote;
+    fpActions.appendChild(btn);
+  }
+}
+
+// Patch calcOverprint and calcFullprint to add save buttons
+const originalCalcOverprint = calcOverprint;
+calcOverprint = function() {
+  originalCalcOverprint();
+  addSaveButtons();
+};
+const originalCalcFullprint = calcFullprint;
+calcFullprint = function() {
+  originalCalcFullprint();
+  addSaveButtons();
+};
+
+/* ==================== INIT ==================== */
+
+window.addEventListener('load', () => {
+  initAuth();
+  addOverprintItem();
+  addFullprintItem();
+});
 addOverprintItem();
 addFullprintItem();
 </script>
+
+  <!-- QUOTES LIST SECTION -->
+  <div id="tabQuotesContent" class="hidden">
+    <div class="card">
+      <h2 style="margin-top:0">📋 Moje wyceny</h2>
+      <div class="row" style="margin-bottom:12px;">
+        <div class="col">
+          <label>Filtruj status</label>
+          <select id="quoteFilter" onchange="loadQuotes()">
+            <option value="all">Wszystkie</option>
+            <option value="draft">Robocze</option>
+            <option value="sent">Wysłane</option>
+            <option value="waiting">Czekające</option>
+            <option value="expired">Przeterminowane</option>
+            <option value="responded">Odpowiedziane</option>
+            <option value="won">Wygrane</option>
+            <option value="lost">Przegrane</option>
+          </select>
+        </div>
+        <div class="col">
+          <label>&nbsp;</label>
+          <button class="btn-primary" onclick="loadQuotes()">🔄 Odśwież</button>
+        </div>
+      </div>
+      <div id="quotesList" style="overflow-x:auto;">
+        <p class="status info">Zaloguj się, aby zobaczyć wyceny.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- FEEDBACK SECTION -->
+  <div id="tabFeedbackContent" class="hidden">
+    <div class="card">
+      <h2 style="margin-top:0">💬 Feedback — Udoskonalmy kalkulator</h2>
+      <p style="color:#666;font-size:0.9rem;">Zgłoś błąd, zaproponuj funkcję lub zostaw komentarz.</p>
+      <div class="row" style="gap:12px;margin-top:12px;">
+        <div class="col">
+          <label>Kategoria</label>
+          <select id="fbCategory">
+            <option value="general">Ogólne</option>
+            <option value="bug">Błąd</option>
+            <option value="feature">Propozycja funkcji</option>
+          </select>
+        </div>
+        <div class="col-full">
+          <label>Twój komentarz</label>
+          <textarea id="fbContent" rows="3" placeholder="Co chcesz zgłosić?"></textarea>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn-primary" onclick="submitFeedback()">Wyślij feedback</button>
+      </div>
+      <div id="fbStatus"></div>
+      <div id="fbList" style="margin-top:20px;">
+        <p style="color:#666;font-size:0.9rem;">Zaloguj się, aby zobaczyć wszystkie komentarze.</p>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>
