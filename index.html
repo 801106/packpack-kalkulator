@@ -1407,26 +1407,17 @@ function switchTab(tab) {
   document.getElementById('tabQuotes').className = tab === 'quotes' ? 'btn-primary active' : 'btn-secondary';
   document.getElementById('tabFeedback').className = tab === 'feedback' ? 'btn-primary active' : 'btn-secondary';
   
-  const calcContent = document.querySelectorAll('.mode-section, .card:not(#authSection):not(#tabQuotesContent):not(#tabFeedbackContent)');
-  // Show/hide calculator content (all cards except auth, quotes, feedback)
-  const allCards = document.querySelectorAll('.card');
-  allCards.forEach(card => {
-    if (card.id === 'authSection') return;
-    if (tab === 'calc') {
-      if (!card.closest('#tabQuotesContent') && !card.closest('#tabFeedbackContent')) {
-        card.style.display = '';
-      }
-    } else {
-      if (!card.closest('#tabQuotesContent') && !card.closest('#tabFeedbackContent')) {
-        card.style.display = 'none';
-      }
-    }
-  });
+  // Show/hide calculator sections
+  document.getElementById('overprintSection').classList.toggle('hidden', tab !== 'calc');
+  document.getElementById('fullprintSection').classList.toggle('hidden', tab !== 'calc');
   
+  // Show/hide quotes and feedback
   document.getElementById('tabQuotesContent').classList.toggle('hidden', tab !== 'quotes');
   document.getElementById('tabFeedbackContent').classList.toggle('hidden', tab !== 'feedback');
   
-  if (tab === 'quotes' && currentUser) loadQuotes();
+  if (tab === 'quotes' && currentUser) { try { loadQuotes(); } catch(e) { console.error(e); } }
+  if (tab === 'feedback' && currentUser) { try { loadFeedback(); } catch(e) { console.error(e); } }
+}
   if (tab === 'feedback' && currentUser) loadFeedback();
 }
 
