@@ -1645,6 +1645,22 @@ calcFullprint = function() {
 
 /* ==================== INIT ==================== */
 
+// Explicitly expose Supabase auth functions to window for HTML onclick
+window.signIn = signIn;
+window.signUp = signUp;
+window.signOut = signOut;
+window.resetPassword = resetPassword;
+window.switchTab = switchTab;
+window.saveQuote = saveQuote;
+window.loadQuotes = loadQuotes;
+window.updateQuoteStatus = updateQuoteStatus;
+window.showQuoteDetail = showQuoteDetail;
+window.deleteQuote = deleteQuote;
+window.submitFeedback = submitFeedback;
+window.loadFeedback = loadFeedback;
+window.setFullprintCurrency = setFullprintCurrency;
+window.initSupabase = initSupabase;
+
 window.addEventListener('load', () => {
   initSupabase();
   addOverprintItem();
