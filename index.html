@@ -1271,7 +1271,7 @@ function fetchNbp() {
 const SUPABASE_URL = 'https://srwhepvvxzxfvcbnztwq.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyd2hlcHZ2eHp4ZnZjYm56dHdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxNDc1OTEsImV4cCI6MjA5NzcyMzU5MX0.E9mMn0m-EPOy4JSsLzqV4zeGxvm5sWJX-3YswgZZdyE';
 
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let currentUser = null;
 
 async function initAuth() {
