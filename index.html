@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>PackPack Kalkulator</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js?v=2"></script>
 <style>
@@ -1494,8 +1497,10 @@ async function saveQuote() {
 
 async function loadQuotes() {
   if (!currentUser) return;
-  const filter = document.getElementById('quoteFilter').value;
-  const search = document.getElementById('quoteSearch').value.trim().toLowerCase();
+  const filterEl = document.getElementById('quoteFilter');
+  const searchEl = document.getElementById('quoteSearch');
+  const filter = filterEl ? filterEl.value : 'all';
+  const search = searchEl ? searchEl.value.trim().toLowerCase() : '';
   
   let query = supabaseClient.from('pp_quotes').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
   if (filter !== 'all') query = query.eq('status', filter);
