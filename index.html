@@ -402,21 +402,35 @@ const overprintPrintPrices = {
   }
 };
 
-const fullprintMaterials = [
-  "PET/PE standard",
-  "Kraft papier",
-  "Aluminium",
-  "Biodegradowalny",
-  "Kompostowalny"
-];
+  "Kompostowalny": { "100ml":0.65, "250ml":0.70, "500ml":0.80, "750ml":0.90, "1000ml":1.00, "2000ml":1.25, "3000ml":1.50 }
+};
+const fullprintMaterials = ["PET 12 / PE 70-100", "PET 12 / PE 128", "Kraft papier", "Aluminium", "Biodegradowalny", "Kompostowalny"];
+const fullprintSizesPerMaterial = {
+  "PET 12 / PE 70-100": ["100ml", "250ml", "500ml", "750ml", "1000ml", "2000ml", "3000ml"],
+  "PET 12 / PE 128": ["5000ml"],
+  "Kraft papier": ["100ml", "250ml", "500ml", "750ml", "1000ml", "2000ml", "3000ml"],
+  "Aluminium": ["100ml", "250ml", "500ml", "750ml", "1000ml", "2000ml", "3000ml"],
+  "Biodegradowalny": ["100ml", "250ml", "500ml", "750ml", "1000ml", "2000ml", "3000ml"],
+  "Kompostowalny": ["100ml", "250ml", "500ml", "750ml", "1000ml", "2000ml", "3000ml"]
+};
 
-// PRZYKŁADOWY cennik fullprint (PLN/szt) — ZASTĄP REALNYMI
 const fullprintPrices = {
-  "PET/PE standard": { "100ml":0.30, "250ml":0.35, "500ml":0.40, "750ml":0.45, "1000ml":0.50, "2000ml":0.60, "3000ml":0.75 },
-  "Kraft papier":    { "100ml":0.40, "250ml":0.45, "500ml":0.50, "750ml":0.55, "1000ml":0.60, "2000ml":0.75, "3000ml":0.90 },
-  "Aluminium":       { "100ml":0.50, "250ml":0.55, "500ml":0.60, "750ml":0.70, "1000ml":0.80, "2000ml":1.00, "3000ml":1.20 },
+  "PET 12 / PE 70-100": {
+    "100ml": { "500": 3.90, "1000": 2.24, "5000": 1.40, "10000": 1.20, "15000": 1.06, "20000": 0.94, "50000": 0.64, "100000": 0.54 },
+    "250ml": { "500": 3.90, "1000": 2.45, "5000": 1.65, "10000": 1.41, "15000": 1.25, "20000": 1.13, "50000": 0.83, "100000": 0.73 },
+    "500ml": { "500": 3.90, "1000": 2.47, "5000": 1.73, "10000": 1.48, "15000": 1.36, "20000": 1.24, "50000": 0.94, "100000": 0.84 },
+    "750ml": { "500": 3.90, "1000": 2.69, "5000": 1.94, "10000": 1.70, "15000": 1.61, "20000": 1.55, "50000": 1.45, "100000": 1.35 },
+    "1000ml": { "500": 3.90, "1000": 2.78, "5000": 1.98, "10000": 1.76, "15000": 1.69, "20000": 1.63, "50000": 1.53, "100000": 1.43 },
+    "2000ml": { "500": 3.93, "1000": 3.01, "5000": 2.14, "10000": 1.91, "15000": 1.81, "20000": 1.76, "50000": 1.66, "100000": 1.56 },
+    "3000ml": { "500": 4.93, "1000": 3.75, "5000": 2.60, "10000": 2.41, "15000": 2.29, "20000": 2.27, "50000": 2.17, "100000": 2.07 }
+  },
+  "PET 12 / PE 128": {
+    "5000ml": { "500": 8.55, "1000": 7.33, "5000": 4.92, "10000": 3.92, "15000": 3.82, "20000": 3.72, "50000": 3.62, "100000": 3.52 }
+  },
+  "Kraft papier": { "100ml":0.40, "250ml":0.45, "500ml":0.50, "750ml":0.55, "1000ml":0.60, "2000ml":0.75, "3000ml":0.90 },
+  "Aluminium": { "100ml":0.50, "250ml":0.55, "500ml":0.60, "750ml":0.70, "1000ml":0.80, "2000ml":1.00, "3000ml":1.20 },
   "Biodegradowalny": { "100ml":0.60, "250ml":0.65, "500ml":0.75, "750ml":0.85, "1000ml":0.95, "2000ml":1.15, "3000ml":1.40 },
-  "Kompostowalny":   { "100ml":0.65, "250ml":0.70, "500ml":0.80, "750ml":0.90, "1000ml":1.00, "2000ml":1.25, "3000ml":1.50 }
+  "Kompostowalny": { "100ml":0.65, "250ml":0.70, "500ml":0.80, "750ml":0.90, "1000ml":1.00, "2000ml":1.25, "3000ml":1.50 }
 };
 
 const fullprintMargins = [
@@ -431,7 +445,20 @@ const fullprintMargins = [
   { min: 100000, max: Infinity, val: 0.55 }
 ];
 
-function getFullprintMargin(qty) {
+function getFullprintPrice(material, size, qty) {
+  const p = fullprintPrices[material];
+  if (!p || !p[size]) return 0;
+  const price = p[size];
+  if (typeof price === 'number') return price; // placeholder materials
+  // tiered pricing (PET 12 / PE 70-100, PET 12 / PE 128)
+  const tiers = price;
+  const qtys = Object.keys(tiers).map(Number).sort((a, b) => a - b);
+  let chosen = qtys[0];
+  for (const q of qtys) {
+    if (qty >= q) chosen = q;
+  }
+  return tiers[chosen] || 0;
+}
   for (const t of fullprintMargins) {
     if (qty >= t.min && qty <= t.max) return t.val;
   }
@@ -573,7 +600,9 @@ function addFullprintItem(data) {
   div.dataset.id = id;
 
   const matOptions = fullprintMaterials.map(m => `<option value="${m}">${m}</option>`).join('');
-  const sizeOptions = overprintSizes.map(s => `<option value="${s}">${s}</option>`).join('');
+  const initialMaterial = data && data.material ? data.material : fullprintMaterials[0];
+  const availableSizes = fullprintSizesPerMaterial[initialMaterial] || [];
+  const sizeOptions = availableSizes.map(s => `<option value="${s}">${s}</option>`).join('');
 
   div.innerHTML = `
     <div class="item-header">
@@ -583,7 +612,7 @@ function addFullprintItem(data) {
     <div class="item-grid">
       <div class="field">
         <label>Materiał</label>
-        <select class="fp-material" onchange="updateFpPrice(${id})">${matOptions}</select>
+        <select class="fp-material" onchange="updateFpMaterial(${id})">${matOptions}</select>
       </div>
       <div class="field">
         <label>Rozmiar</label>
@@ -609,16 +638,26 @@ function addFullprintItem(data) {
   updateFpPrice(id);
 }
 
+function updateFpMaterial(id) {
+  const card = document.querySelector(`#fp-item-${id}`);
+  if (!card) return;
+  const mat = card.querySelector('.fp-material').value;
+  const sizeSelect = card.querySelector('.fp-size');
+  const sizes = fullprintSizesPerMaterial[mat] || [];
+  sizeSelect.innerHTML = sizes.map(s => `<option value="${s}">${s}</option>`).join('');
+  updateFpPrice(id);
+}
+
 function updateFpPrice(id) {
   const card = document.querySelector(`#fp-item-${id}`);
   if (!card) return;
   const mat = card.querySelector('.fp-material').value;
   const size = card.querySelector('.fp-size').value;
   const input = card.querySelector('.fp-price');
-  const prices = fullprintPrices[mat];
-  if (prices && prices[size]) {
-    input.placeholder = prices[size].toFixed(2);
-    if (!input.value) input.value = prices[size].toFixed(2);
+  const price = getFullprintPrice(mat, size, 0);
+  if (price > 0) {
+    input.placeholder = price.toFixed(2);
+    if (!input.value) input.value = price.toFixed(2);
   }
 }
 
@@ -693,7 +732,7 @@ function calcFullprint() {
     const size = card.querySelector('.fp-size').value;
     const qty = parseInt(card.querySelector('.fp-qty').value, 10) || 0;
     const priceInput = parseFloat(card.querySelector('.fp-price').value);
-    const price = isNaN(priceInput) ? (fullprintPrices[material][size] || 0) : priceInput;
+    const price = isNaN(priceInput) ? getFullprintPrice(material, size, qty) : priceInput;
     items.push({ material, size, qty, price });
     totalQty += qty;
   });
@@ -707,7 +746,8 @@ function calcFullprint() {
   let grandTotal = 0;
   items.forEach(it => {
     const qtyForMargin = laczne ? totalQty : it.qty;
-    const marginPln = getFullprintMargin(qtyForMargin);
+    const isTiered = typeof (fullprintPrices[it.material]?.[it.size]) === 'object';
+    const marginPln = isTiered ? 0 : getFullprintMargin(qtyForMargin);
     const clientPrice = it.price + marginPln;
     const total = clientPrice * it.qty;
     grandTotal += total;
@@ -1021,7 +1061,7 @@ function parseMail() {
   if (mode === 'overprint') {
     parsed.forEach(p => addOverprintItem(p));
   } else {
-    parsed.forEach(p => addFullprintItem({ qty: p.qty, size: p.size, material: 'PET/PE standard' }));
+    parsed.forEach(p => addFullprintItem({ qty: p.qty, size: p.size, material: 'PET 12 / PE 70-100' }));
   }
 
   showStatus('mail',`Wykryto ${parsed.length} pozycji i dodano do trybu ${mode.toUpperCase()}.`,'ok');
