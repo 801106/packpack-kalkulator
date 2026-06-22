@@ -1504,7 +1504,6 @@ async function loadQuotes() {
   
   // Check for expired quotes and show reminders
   let reminders = [];
-  const now = new Date();
   data.forEach(q => {
     if (q.status === 'sent' && q.sent_at) {
       const days = (now - new Date(q.sent_at)) / (1000*60*60*24);
