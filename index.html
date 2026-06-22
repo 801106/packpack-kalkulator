@@ -1507,6 +1507,7 @@ async function loadQuotes() {
   
   const { data, error } = await query;
   const list = document.getElementById('quotesList');
+  if (!list) { console.error('quotesList element not found'); return; }
   if (error) { list.innerHTML = '<p class="status err">Błąd: ' + error.message + '</p>'; return; }
   if (!data || !data.length) { list.innerHTML = '<p class="status info">Brak wycen.</p>'; return; }
   
