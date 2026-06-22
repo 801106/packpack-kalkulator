@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PackPack Kalkulator</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+  :root {
+    --bg: #f5f5f5;
+    --text: #1a1a1a;
+    --accent: #F26522;
+    --accent-hover: #d3541a;
+    --card: #ffffff;
+    --success: #4CAF50;
+    --error: #f44336;
+    --border: #e0e0e0;
+    --radius: 10px;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 20px;
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+  }
+  .container { max-width: 1100px; margin: 0 auto; }
+
+  header { text-align: center; margin-bottom: 24px; }
+  .logo-text { font-size: 2.2rem; font-weight: 800; letter-spacing: -1px; color: var(--text); display: inline-block; }
+  .logo-text span { color: var(--accent); }
+  header p { margin: 6px 0 0; color: #666; font-size: 0.95rem; }
+
+  .card {
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    padding: 18px;
+    margin-bottom: 18px;
+  }
+
+  .row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+  .col { flex: 1; min-width: 220px; }
+  .col-full { flex: 1 1 100%; }
+
+  label { font-weight: 600; font-size: 0.9rem; display: block; margin-bottom: 6px; }
+  input, select, textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-family: inherit;
+    font-size: 0.95rem;
+    background: #fff;
+  }
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  textarea { min-height: 120px; resize: vertical; }
+
+  button {
+    border: 0;
+    border-radius: var(--radius);
+    padding: 10px 16px;
+    font-family: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+  }
+  button:active { transform: translateY(1px); }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+    color: #fff;
+  }
+  .btn-primary:hover { background: var(--accent-hover); }
+  .btn-secondary { background: #e9e9e9; color: var(--text); }
+  .btn-secondary:hover { background: #ddd; }
+  .btn-danger { background: var(--error); color: #fff; }
+  .btn-danger:hover { background: #c62828; }
+  .btn-success { background: var(--success); color: #fff; }
+  .btn-success:hover { background: #388e3c; }
+  .btn-small { padding: 6px 10px; font-size: 0.85rem; }
+
+  .mode-toggle { display: flex; gap: 10px; justify-content: center; margin-bottom: 16px; }
+  .mode-toggle button { flex: 1; max-width: 240px; padding: 12px; font-size: 1rem; }
+  .mode-toggle button.active { outline: 3px solid var(--accent); }
+
+  .toggles { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; margin-bottom: 12px; }
+  .toggles label { display: inline-flex; align-items: center; gap: 6px; font-weight: 400; cursor: pointer; }
+  .toggles input[type="checkbox"] { width: auto; accent-color: var(--accent); }
+
+  .rates { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; justify-content: center; }
+  .rates .field { width: 140px; }
+  .rates .field input { text-align: center; font-weight: 700; }
+
+  .item-card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+    margin-bottom: 12px;
+    background: #fff;
+  }
+  .item-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 10px; font-weight: 700; color: var(--accent);
+  }
+  .item-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; }
+  .item-grid .field { display: flex; flex-direction: column; }
+  .item-grid .field label { font-size: 0.8rem; margin-bottom: 4px; color: #555; }
+
+  .results { margin-top: 16px; }
+  .result-table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  .result-table th, .result-table td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; }
+  .result-table th { background: #fafafa; }
+  .result-table tr:nth-child(even) { background: #fdfdfd; }
+  .summary { font-weight: 700; font-size: 1.1rem; margin-top: 10px; color: var(--accent); }
+
+  .quote-box { background: #fafafa; border: 1px dashed var(--border); padding: 12px; border-radius: var(--radius); font-family: monospace; white-space: pre-wrap; }
+
+  .status { padding: 8px 12px; border-radius: var(--radius); margin-top: 8px; font-size: 0.9rem; }
+  .status.ok { background: #e8f5e9; color: #2e7d32; }
+  .status.err { background: #ffebee; color: #c62828; }
+  .status.info { background: #e3f2fd; color: #1565c0; }
+
+  .hidden { display: none !important; }
+
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+
+  .logo-text { font-size: 2.2rem; font-weight: 800; letter-spacing: -1px; color: var(--text); display: inline-block; }
+  .logo-text span { color: var(--accent); }
+
+  .print-only { display: none; }
+  .no-print { }
+
+  @media print {
+    @page { margin: 15mm; }
+    body { background: #fff; padding: 0; font-size: 10pt; }
+    .container { max-width: 100%; }
+    .no-print, .mode-toggle, .toggles, .rates, .actions, textarea, select, input, button, .item-card, .card:not(.print-visible) { display: none !important; }
+    .print-visible, .print-only { display: block !important; }
+    .results { margin-top: 0; }
+    .result-table { font-size: 9.5pt; }
+    .result-table th, .result-table td { padding: 5px 7px; }
+    .summary { font-size: 12pt; margin-top: 8px; }
+    .print-header { text-align: center; margin-bottom: 16px; border-bottom: 2px solid var(--accent); padding-bottom: 10px; }
+    .print-header h2 { margin: 0; font-size: 18pt; color: var(--accent); }
+    .print-header p { margin: 4px 0 0; font-size: 9pt; color: #444; }
+    .print-footer { margin-top: 24px; border-top: 1px solid #ccc; padding-top: 8px; font-size: 8pt; color: #555; }
+    .print-company { margin-top: 20px; font-size: 9pt; color: #333; line-height: 1.5; }
+    .print-title { font-size: 14pt; font-weight: 700; margin-bottom: 8px; color: #1a1a1a; }
+  }
+
+  @media (max-width: 640px) {
+    .item-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="logo-text"><span>PACK</span>PACK</div>
+    <p style="margin-top:6px">Kalkulator wycen — Overprint & Fullprint</p>
+  </header>
+
+  <div class="card">
+    <div class="mode-toggle">
+      <button id="btnOverprint" class="btn-primary active" onclick="setMode('overprint')">OVERPRINT</button>
+      <button id="btnFullprint" class="btn-secondary" onclick="setMode('fullprint')">FULLPRINT</button>
+    </div>
+
+    <div class="toggles">
+      <label><input type="checkbox" id="chkLaczne"> Łączne ilości (suma wszystkich pozycji → wyższy próg)</label>
+      <label><input type="checkbox" id="chkAutoStrony"> Auto jedno/dwustronny (z maila)</label>
+      <label><input type="checkbox" id="chkAutoKolor"> Auto czarny/CMYK (z maila)</label>
+    </div>
+
+    <div class="rates">
+      <div class="field">
+        <label>USD / PLN</label>
+        <input type="number" step="0.01" id="rateUsd" value="4.05">
+      </div>
+      <div class="field">
+        <label>EUR / PLN</label>
+        <input type="number" step="0.01" id="rateEur" value="4.35">
+      </div>
+      <button class="btn-secondary" id="btnNbp" onclick="fetchNbp()">Pobierz z NBP</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0">Parsowanie maila</h2>
+    <textarea id="mailInput" placeholder="Wklej tekst maila od klienta..."></textarea>
+    <div class="actions">
+      <button class="btn-primary" onclick="parseMail()">Parsuj</button>
+      <button class="btn-secondary" onclick="clearMail()">Wyczyść</button>
+    </div>
+    <div id="mailStatus" class="status hidden"></div>
+  </div>
+
+  <div class="card hidden">
+    <h2 style="margin-top:0">Import cen z CSV sklepu</h2>
+    <p style="font-size:0.85rem;color:#555;margin-top:0">Wklej eksport CSV z realnymi cenami (format: <code>produkt_id;Nazwa;SKU;Cena</code>). System wyciągnie ceny za 1 sztukę.</p>
+    <textarea id="csvPricesInput" placeholder="Wklej zawartość pliku CSV..." style="min-height:80px"></textarea>
+    <div class="actions">
+      <button class="btn-primary" onclick="importPricesFromCsv()">Importuj ceny</button>
+      <button class="btn-secondary" onclick="document.getElementById('csvPricesInput').value=''">Wyczyść</button>
+    </div>
+    <div id="csvImportStatus" class="status hidden"></div>
+  </div>
+
+  <div id="overprintSection" class="card mode-section">
+    <h2 style="margin-top:0">Overprint (zadruk)</h2>
+    <div id="overprintItems"></div>
+    <div class="actions">
+      <button class="btn-primary" onclick="addOverprintItem()">+ Dodaj produkt</button>
+      <button class="btn-success" onclick="calcOverprint()">Oblicz</button>
+    </div>
+    <div id="overprintResults" class="results"></div>
+    <div class="actions no-print" id="overprintPrintActions" style="display:none">
+      <button class="btn-secondary" onclick="printResults('overprint')">Drukuj wycenę (PDF)</button>
+    </div>
+  </div>
+
+  <div id="fullprintSection" class="card mode-section hidden">
+    <h2 style="margin-top:0">Fullprint (outsourcing)</h2>
+    <div id="fullprintItems"></div>
+    <div class="actions">
+      <button class="btn-primary" onclick="addFullprintItem()">+ Dodaj produkt</button>
+      <button class="btn-success" onclick="calcFullprint()">Oblicz</button>
+    </div>
+    <div id="fullprintResults" class="results"></div>
+    <div class="actions no-print" id="fullprintPrintActions" style="display:none">
+      <button class="btn-secondary" onclick="printResults('fullprint')">Drukuj wycenę (PDF)</button>
+    </div>
+
+    <h3>QUOTE do kontrahenta (Teresa)</h3>
+    <textarea id="quoteOutput" class="quote-box" readonly placeholder="Kliknij 'Generuj QUOTE'..." style="min-height:180px"></textarea>
+    <div class="actions">
+      <button class="btn-primary" onclick="generateQuote()">Generuj QUOTE</button>
+      <button class="btn-secondary" onclick="copyQuote()">Kopiuj do schowka</button>
+    </div>
+
+    <h3>Odpowiedź od Teresy — odwrotny Teresomat</h3>
+    <textarea id="teresaInput" placeholder="Wklej odpowiedź od kontrahenta (z ceną w USD)..." style="min-height:120px"></textarea>
+    <div class="actions">
+      <button class="btn-success" onclick="calcTeresa()">Przelicz</button>
+    </div>
+    <div id="teresaResults" class="results"></div>
+  </div>
+</div>
+
+<script>
+/* ==================== DANE ==================== */
+
+const overprintProducts = [
+  "Doypack Papier Kraft z okienkiem",
+  "Doypack Biały Papier Kraft z okienkiem",
+  "Doypack Papier Kraft Aluminium",
+  "Doypack Papier Kraft",
+  "Doypack Biały Papier Kraft",
+  "Doypack Biały Papier Kraft Aluminium",
+  "Doypack Biodegradowalny Biały Papier Kraft",
+  "Doypack Kompostowalny Papier Kraft"
+];
+
+const overprintSizesPerProduct = {
+  "Doypack Papier Kraft z okienkiem": [
+    "100ml", "250ml", "500ml", "750ml", "1000ml", "2000ml", "3000ml", "5000ml"
+  ],
+  "Doypack Biały Papier Kraft z okienkiem": [
+    "100ml", "250ml", "500ml", "750ml", "1000ml", "2000ml", "3000ml"
+  ],
+  "Doypack Papier Kraft Aluminium": [
+    "100ml", "250ml", "500ml", "750ml", "1000ml", "2000ml", "3000ml"
+  ],
+  "Doypack Papier Kraft": [
+    "100ml", "250ml", "500ml", "750ml", "1000ml", "2000ml", "3000ml"
+  ],
+  "Doypack Biały Papier Kraft": [
+    "100ml", "250ml", "500ml", "750ml", "1000ml", "2000ml"
+  ],
+  "Doypack Biały Papier Kraft Aluminium": [
+    "100ml", "250ml", "500ml", "750ml", "1000ml", "2000ml", "3000ml"
+  ],
+  "Doypack Biodegradowalny Biały Papier Kraft": [
+    "250ml", "500ml", "750ml"
+  ],
+  "Doypack Kompostowalny Papier Kraft": [
+    "100ml", "250ml", "500ml", "750ml"
+  ]
+};
+const overprintSizes = ["100ml", "250ml", "500ml", "750ml", "1000ml", "2000ml", "3000ml", "5000ml"]; // all possible sizes
+
+// CENY NETTO ZE SKLEPU (CSV) — {produkt: {rozmiar: {nakład: cena/szt}}}
+const overprintProductPrices = {
+  "Doypack Papier Kraft z okienkiem": {
+    "100ml": { "50": 0.4472, "100": 0.4065, "1000": 0.3496 },
+    "250ml": { "50": 0.5772, "100": 0.5366, "1000": 0.4797 },
+    "500ml": { "50": 0.6422, "100": 0.5935, "1000": 0.5447 },
+    "750ml": { "50": 1.0488, "100": 1.0081, "1000": 0.9431 },
+    "1000ml": { "50": 1.1138, "100": 1.0732, "1000": 1.0163 },
+    "2000ml": { "50": 1.1788, "100": 1.1382, "1000": 1.0813 },
+    "3000ml": { "50": 1.9918, "100": 1.9512, "500": 1.9106 },
+    "5000ml": { "50": 2.5284, "100": 2.2276, "200": 2.2276, "500": 2.0 }
+  },
+  "Doypack Biały Papier Kraft z okienkiem": {
+    "100ml": { "50": 0.5284, "100": 0.4878, "1000": 0.4309 },
+    "250ml": { "50": 0.5772, "100": 0.5366, "1000": 0.4797 },
+    "500ml": { "50": 0.6422, "100": 0.5935, "1000": 0.5447 },
+    "750ml": { "50": 1.0488, "100": 1.0081, "1000": 0.9431 },
+    "1000ml": { "50": 1.1138, "100": 1.0732, "1000": 1.0163 },
+    "2000ml": { "50": 1.1788, "100": 1.1382, "1000": 1.0813 },
+    "3000ml": { "50": 1.9918, "100": 1.9512, "500": 1.9106 }
+  },
+  "Doypack Papier Kraft Aluminium": {
+    "100ml": { "50": 0.4960, "100": 0.4553, "1000": 0.3984 },
+    "250ml": { "50": 0.6586, "100": 0.6179, "1000": 0.5610 },
+    "500ml": { "50": 0.7560, "100": 0.7154, "1000": 0.6585 },
+    "750ml": { "50": 1.2358, "100": 1.1789, "1000": 1.1220 },
+    "1000ml": { "50": 1.3740, "100": 1.3333, "1000": 1.2764 },
+    "2000ml": { "50": 1.4716, "100": 1.4309, "1000": 1.3740 },
+    "3000ml": { "50": 2.4960, "100": 2.4553, "500": 2.3984 }
+  },
+  "Doypack Papier Kraft": {
+    "100ml": { "50": 0.6666, "100": 0.6098, "1000": 0.5772 },
+    "250ml": { "50": 0.7480, "100": 0.6911, "1000": 0.6504 },
+    "500ml": { "50": 0.8618, "100": 0.8130, "1000": 0.7407 },
+    "750ml": { "50": 1.2846, "100": 1.1789, "1000": 1.1057 },
+    "1000ml": { "50": 1.4308, "100": 1.3008, "1000": 1.2195 },
+    "2000ml": { "50": 1.5122, "100": 1.3821, "1000": 1.3008 },
+    "3000ml": { "50": 1.7886, "100": 1.6260, "500": 1.5285 }
+  },
+  "Doypack Biały Papier Kraft": {
+    "100ml": { "50": 0.6666, "100": 0.6098, "1000": 0.5772 },
+    "250ml": { "50": 0.7480, "100": 0.6911, "1000": 0.6504 },
+    "500ml": { "50": 0.8618, "100": 0.8130, "1000": 0.7407 },
+    "750ml": { "50": 1.2846, "100": 1.1789, "1000": 1.1057 },
+    "1000ml": { "50": 1.4308, "100": 1.3008, "1000": 1.2195 },
+    "2000ml": { "50": 1.5122, "100": 1.3821, "1000": 1.3008 }
+  },
+  "Doypack Biały Papier Kraft Aluminium": {
+    "100ml": { "50": 0.6666, "100": 0.6098, "1000": 0.5772 },
+    "250ml": { "50": 0.7480, "100": 0.7561, "1000": 0.6504 },
+    "500ml": { "50": 0.8618, "100": 0.8130, "1000": 0.7407 },
+    "750ml": { "50": 1.2846, "100": 1.1789, "1000": 1.1057 },
+    "1000ml": { "50": 1.4308, "100": 1.3008, "1000": 1.2195 },
+    "2000ml": { "50": 1.4716, "100": 1.4309, "1000": 1.3740 },
+    "3000ml": { "50": 2.4960, "100": 2.4553, "500": 2.3984 }
+  },
+  "Doypack Biodegradowalny Biały Papier Kraft": {
+    "250ml": { "50": 1.5448, "100": 1.4634, "1000": 1.3821 },
+    "500ml": { "50": 1.7886, "100": 1.7073, "1000": 1.6260 },
+    "750ml": { "50": 2.0326, "100": 1.9512, "1000": 1.8699 }
+  },
+  "Doypack Kompostowalny Papier Kraft": {
+    "100ml": { "50": 1.0406, "100": 0.9512, "1000": 0.8943 },
+    "250ml": { "50": 1.1056, "100": 1.0000, "1000": 0.9512 },
+    "500ml": { "50": 1.2682, "100": 1.1626, "1000": 1.0976 },
+    "750ml": { "50": 2.0326, "100": 1.8537, "1000": 1.7561 }
+  }
+};
+
+// Cennik nadruku w Tychach (PLN/szt) — wg promptu
+const overprintPrintPrices = {
+  "100ml":  {
+    "black": { 100: 1.09, 250: 0.80, 1000: 0.70 },
+    "cmyk":  { 100: 1.29, 250: 1.00, 1000: 0.90 }
+  },
+  "250ml":  {
+    "black": { 100: 1.09, 250: 0.80, 1000: 0.70 },
+    "cmyk":  { 100: 1.29, 250: 1.00, 1000: 0.90 }
+  },
+  "500ml":  {
+    "black": { 100: 1.09, 250: 0.80, 1000: 0.70 },
+    "cmyk":  { 100: 1.29, 250: 1.00, 1000: 0.90 }
+  },
+  "750ml":  {
+    "black": { 100: 1.14, 250: 0.85, 1000: 0.75 },
+    "cmyk":  { 100: 1.34, 250: 1.05, 1000: 0.95 }
+  },
+  "1000ml": {
+    "black": { 100: 1.19, 250: 0.90, 1000: 0.80 },
+    "cmyk":  { 100: 1.39, 250: 1.10, 1000: 1.00 }
+  },
+  "2000ml": {
+    "black": { 100: 1.19, 250: 0.90, 1000: 0.80 },
+    "cmyk":  { 100: 1.39, 250: 1.10, 1000: 1.00 }
+  },
+  "3000ml": {
+    "black": { 100: 1.24, 250: 0.95, 1000: 0.85 },
+    "cmyk":  { 100: 1.44, 250: 1.15, 1000: 1.05 }
+  },
+  "5000ml": {
+    "black": { 100: 1.29, 250: 1.00, 1000: 0.90 },
+    "cmyk":  { 100: 1.49, 250: 1.20, 1000: 1.10 }
+  }
+};
+
+const fullprintMaterials = [
+  "PET/PE standard",
+  "Kraft papier",
+  "Aluminium",
+  "Biodegradowalny",
+  "Kompostowalny"
+];
+
+// PRZYKŁADOWY cennik fullprint (PLN/szt) — ZASTĄP REALNYMI
+const fullprintPrices = {
+  "PET/PE standard": { "100ml":0.30, "250ml":0.35, "500ml":0.40, "750ml":0.45, "1000ml":0.50, "2000ml":0.60, "3000ml":0.75 },
+  "Kraft papier":    { "100ml":0.40, "250ml":0.45, "500ml":0.50, "750ml":0.55, "1000ml":0.60, "2000ml":0.75, "3000ml":0.90 },
+  "Aluminium":       { "100ml":0.50, "250ml":0.55, "500ml":0.60, "750ml":0.70, "1000ml":0.80, "2000ml":1.00, "3000ml":1.20 },
+  "Biodegradowalny": { "100ml":0.60, "250ml":0.65, "500ml":0.75, "750ml":0.85, "1000ml":0.95, "2000ml":1.15, "3000ml":1.40 },
+  "Kompostowalny":   { "100ml":0.65, "250ml":0.70, "500ml":0.80, "750ml":0.90, "1000ml":1.00, "2000ml":1.25, "3000ml":1.50 }
+};
+
+const fullprintMargins = [
+  { min: 0,      max: 499,    val: 0 },
+  { min: 500,    max: 999,    val: 1.00 },
+  { min: 1000,   max: 4999,   val: 0.90 },
+  { min: 5000,   max: 9999,   val: 0.80 },
+  { min: 10000,  max: 14999,  val: 0.75 },
+  { min: 15000,  max: 19999,  val: 0.70 },
+  { min: 20000,  max: 49999,  val: 0.65 },
+  { min: 50000,  max: 99999,  val: 0.60 },
+  { min: 100000, max: Infinity, val: 0.55 }
+];
+
+function getFullprintMargin(qty) {
+  for (const t of fullprintMargins) {
+    if (qty >= t.min && qty <= t.max) return t.val;
+  }
+  return 0;
+}
+
+function getOverprintProductPrice(product, size, qty) {
+  const p = overprintProductPrices[product];
+  if (!p || !p[size]) return 0;
+  const tiers = p[size];
+  const qtys = Object.keys(tiers).map(Number).sort((a, b) => a - b);
+  let chosen = qtys[0];
+  for (const q of qtys) {
+    if (qty >= q) chosen = q;
+  }
+  return tiers[chosen] || 0;
+}
+
+function getOverprintPrintPrice(size, printType, qty) {
+  const p = overprintPrintPrices[size][printType];
+  if (!p) return 0;
+  if (qty >= 1000) return p[1000];
+  if (qty >= 250) return p[250];
+  return p[100];
+}
+
+/* ==================== UI / STAN ==================== */
+
+let mode = 'overprint';
+let overprintId = 0;
+let fullprintId = 0;
+
+function setMode(m) {
+  mode = m;
+  document.getElementById('btnOverprint').className = m === 'overprint' ? 'btn-primary active' : 'btn-secondary';
+  document.getElementById('btnFullprint').className = m === 'fullprint' ? 'btn-primary active' : 'btn-secondary';
+  document.getElementById('overprintSection').classList.toggle('hidden', m !== 'overprint');
+  document.getElementById('fullprintSection').classList.toggle('hidden', m !== 'fullprint');
+}
+
+function addOverprintItem(data) {
+  overprintId++;
+  const id = overprintId;
+  const container = document.getElementById('overprintItems');
+  const div = document.createElement('div');
+  div.className = 'item-card';
+  div.id = `op-item-${id}`;
+  div.dataset.id = id;
+
+  const productOptions = overprintProducts.map(p => `<option value="${p}">${p}</option>`).join('');
+  const initialProduct = data && data.product ? data.product : overprintProducts[0];
+  const availableSizes = overprintSizesPerProduct[initialProduct] || overprintSizes;
+  const sizeOptions = availableSizes.map(s => `<option value="${s}">${s}</option>`).join('');
+  const printSel = data && data.print ? data.print : 'black';
+  const sidesSel = data && data.sides ? data.sides : '1';
+
+  div.innerHTML = `
+    <div class="item-header">
+      <span>Pozycja #${id}</span>
+      <button class="btn-danger btn-small" onclick="removeItem('op-item-${id}')">Usuń</button>
+    </div>
+    <div class="item-grid">
+      <div class="field">
+        <label>Produkt</label>
+        <select class="op-product" onchange="updateOpSizes(${id})">${productOptions}</select>
+      </div>
+      <div class="field">
+        <label>Rozmiar</label>
+        <select class="op-size">${sizeOptions}</select>
+      </div>
+      <div class="field">
+        <label>Cena opakowania (PLN/szt)</label>
+        <input type="number" step="0.01" class="op-price" placeholder="wpisz cenę">
+      </div>
+      <div class="field">
+        <label>Nadruk</label>
+        <select class="op-print">
+          <option value="black" ${printSel==='black'?'selected':''}>Czarny</option>
+          <option value="cmyk"  ${printSel==='cmyk'?'selected':''}>CMYK</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Strony</label>
+        <select class="op-sides">
+          <option value="1" ${sidesSel==='1'?'selected':''}>Jednostronny</option>
+          <option value="2" ${sidesSel==='2'?'selected':''}>Dwustronny</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Ilość</label>
+        <input type="number" min="1" class="op-qty" value="${data && data.qty ? data.qty : 100}" onchange="updateOpPrice(${id})">
+      </div>
+    </div>
+  `;
+  container.appendChild(div);
+  if (data && data.product) div.querySelector('.op-product').value = data.product;
+  if (data && data.size) {
+    const sizeSel = div.querySelector('.op-size');
+    if (availableSizes.includes(data.size)) sizeSel.value = data.size;
+  }
+  updateOpPrice(id);
+}
+
+function updateOpSizes(id) {
+  const card = document.querySelector(`#op-item-${id}`);
+  if (!card) return;
+  const product = card.querySelector('.op-product').value;
+  const sizeSel = card.querySelector('.op-size');
+  const available = overprintSizesPerProduct[product] || overprintSizes;
+  const currentVal = sizeSel.value;
+  sizeSel.innerHTML = available.map(s => `<option value="${s}">${s}</option>`).join('');
+  if (available.includes(currentVal)) sizeSel.value = currentVal;
+  else sizeSel.value = available[0] || '250ml';
+  updateOpPrice(id);
+}
+
+function updateOpPrice(id) {
+  const card = document.querySelector(`#op-item-${id}`);
+  if (!card) return;
+  const product = card.querySelector('.op-product').value;
+  const size = card.querySelector('.op-size').value;
+  const input = card.querySelector('.op-price');
+  const qty = parseInt(card.querySelector('.op-qty').value, 10) || 1;
+  const price = getOverprintProductPrice(product, size, qty);
+  if (price > 0) {
+    input.placeholder = price.toFixed(2);
+  } else {
+    input.placeholder = 'wpisz cenę';
+  }
+}
+
+function addFullprintItem(data) {
+  fullprintId++;
+  const id = fullprintId;
+  const container = document.getElementById('fullprintItems');
+  const div = document.createElement('div');
+  div.className = 'item-card';
+  div.id = `fp-item-${id}`;
+  div.dataset.id = id;
+
+  const matOptions = fullprintMaterials.map(m => `<option value="${m}">${m}</option>`).join('');
+  const sizeOptions = overprintSizes.map(s => `<option value="${s}">${s}</option>`).join('');
+
+  div.innerHTML = `
+    <div class="item-header">
+      <span>Pozycja #${id}</span>
+      <button class="btn-danger btn-small" onclick="removeItem('fp-item-${id}')">Usuń</button>
+    </div>
+    <div class="item-grid">
+      <div class="field">
+        <label>Materiał</label>
+        <select class="fp-material" onchange="updateFpPrice(${id})">${matOptions}</select>
+      </div>
+      <div class="field">
+        <label>Rozmiar</label>
+        <select class="fp-size" onchange="updateFpPrice(${id})">${sizeOptions}</select>
+      </div>
+      <div class="field">
+        <label>Cena zakupu (PLN/szt)</label>
+        <input type="number" step="0.01" class="fp-price" placeholder="auto">
+      </div>
+      <div class="field">
+        <label>Ilość</label>
+        <input type="number" min="1" class="fp-qty" value="${data && data.qty ? data.qty : 500}">
+      </div>
+      <div class="field">
+        <label>Nadruk / Uwagi (do QUOTE)</label>
+        <input type="text" class="fp-notes" placeholder="np. CMYK, mat, okienko, zip">
+      </div>
+    </div>
+  `;
+  container.appendChild(div);
+  if (data && data.material) div.querySelector('.fp-material').value = data.material;
+  if (data && data.size) div.querySelector('.fp-size').value = data.size;
+  updateFpPrice(id);
+}
+
+function updateFpPrice(id) {
+  const card = document.querySelector(`#fp-item-${id}`);
+  if (!card) return;
+  const mat = card.querySelector('.fp-material').value;
+  const size = card.querySelector('.fp-size').value;
+  const input = card.querySelector('.fp-price');
+  const prices = fullprintPrices[mat];
+  if (prices && prices[size]) {
+    input.placeholder = prices[size].toFixed(2);
+    if (!input.value) input.value = prices[size].toFixed(2);
+  }
+}
+
+function removeItem(elId) {
+  const el = document.getElementById(elId);
+  if (el) el.remove();
+}
+
+/* ==================== KALKULACJE ==================== */
+
+function calcOverprint() {
+  const cards = document.querySelectorAll('#overprintItems .item-card');
+  if (!cards.length) { showStatus('overprint','Dodaj co najmniej jedną pozycję.','err'); return; }
+
+  const laczne = document.getElementById('chkLaczne').checked;
+  let totalQty = 0;
+  const items = [];
+
+  cards.forEach(card => {
+    const product = card.querySelector('.op-product').value;
+    const size = card.querySelector('.op-size').value;
+    const print = card.querySelector('.op-print').value;
+    const sides = parseInt(card.querySelector('.op-sides').value, 10);
+    const qty = parseInt(card.querySelector('.op-qty').value, 10) || 0;
+    const priceInput = parseFloat(card.querySelector('.op-price').value);
+    const price = isNaN(priceInput) ? getOverprintProductPrice(product, size, qty) : priceInput;
+    items.push({ product, size, print, sides, qty, price });
+    totalQty += qty;
+  });
+
+  let html = '<table class="result-table"><thead><tr>' +
+    '<th>Produkt</th><th>Rozmiar</th><th>Nadruk</th><th>Strony</th><th>Ilość</th>' +
+    '<th>Cena opak./szt</th><th>Cena nadruku/szt</th><th>Koszt całk./szt</th><th>Wartość netto</th></tr></thead><tbody>';
+
+  let grandTotal = 0;
+  items.forEach(it => {
+    const qtyForPrice = laczne ? totalQty : it.qty;
+    let printPrice = getOverprintPrintPrice(it.size, it.print, qtyForPrice);
+    if (it.sides === 2) printPrice *= 2;
+    const costPerItem = it.price + printPrice;
+    const total = costPerItem * it.qty;
+    grandTotal += total;
+    html += `<tr>
+      <td>${it.product}</td>
+      <td>${it.size}</td>
+      <td>${it.print==='black'?'Czarny':'CMYK'}</td>
+      <td>${it.sides===1?'Jednostronny':'Dwustronny'}</td>
+      <td>${it.qty}</td>
+      <td>${it.price.toFixed(2)} PLN</td>
+      <td>${printPrice.toFixed(2)} PLN</td>
+      <td>${costPerItem.toFixed(2)} PLN</td>
+      <td>${total.toFixed(2)} PLN</td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  html += `<div class="summary">Suma całkowita (netto): ${grandTotal.toFixed(2)} PLN</div>`;
+  if (laczne) html += `<div class="status info">Użyto łącznych ilości (${totalQty} szt) dla progu cennika nadruku.</div>`;
+  document.getElementById('overprintResults').innerHTML = html;
+  document.getElementById('overprintPrintActions').style.display = 'flex';
+}
+
+function calcFullprint() {
+  const cards = document.querySelectorAll('#fullprintItems .item-card');
+  if (!cards.length) { showStatus('fullprint','Dodaj co najmniej jedną pozycję.','err'); return; }
+
+  const laczne = document.getElementById('chkLaczne').checked;
+  let totalQty = 0;
+  const items = [];
+
+  cards.forEach(card => {
+    const material = card.querySelector('.fp-material').value;
+    const size = card.querySelector('.fp-size').value;
+    const qty = parseInt(card.querySelector('.fp-qty').value, 10) || 0;
+    const priceInput = parseFloat(card.querySelector('.fp-price').value);
+    const price = isNaN(priceInput) ? (fullprintPrices[material][size] || 0) : priceInput;
+    items.push({ material, size, qty, price });
+    totalQty += qty;
+  });
+
+  const eurRate = parseFloat(document.getElementById('rateEur').value) || 4.35;
+
+  let html = '<table class="result-table"><thead><tr>' +
+    '<th>Materiał</th><th>Rozmiar</th><th>Ilość</th><th>Cena zakupu/szt</th>' +
+    '<th>Marża/szt</th><th>Cena klienta/szt</th><th>Wartość netto</th></tr></thead><tbody>';
+
+  let grandTotal = 0;
+  items.forEach(it => {
+    const qtyForMargin = laczne ? totalQty : it.qty;
+    const marginPln = getFullprintMargin(qtyForMargin);
+    const clientPrice = it.price + marginPln;
+    const total = clientPrice * it.qty;
+    grandTotal += total;
+    html += `<tr>
+      <td>${it.material}</td>
+      <td>${it.size}</td>
+      <td>${it.qty}</td>
+      <td>${it.price.toFixed(2)} PLN</td>
+      <td>${marginPln.toFixed(2)} PLN</td>
+      <td>${clientPrice.toFixed(2)} PLN</td>
+      <td>${total.toFixed(2)} PLN</td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  html += `<div class="summary">Suma całkowita (netto): ${grandTotal.toFixed(2)} PLN`;
+  html += ` &nbsp;|&nbsp; Przy kursie EUR/PLN = ${eurRate.toFixed(2)}: ${(grandTotal/eurRate).toFixed(2)} EUR</div>`;
+  if (laczne) html += `<div class="status info">Użyto łącznych ilości (${totalQty} szt) dla wyższej marży.</div>`;
+  document.getElementById('fullprintResults').innerHTML = html;
+  document.getElementById('fullprintPrintActions').style.display = 'flex';
+}
+
+/* ==================== TERESOMATY ==================== */
+
+function generateQuote() {
+  const cards = document.querySelectorAll('#fullprintItems .item-card');
+  if (!cards.length) { showStatus('fullprint','Dodaj pozycje fullprint przed generowaniem QUOTE.','err'); return; }
+  const clientMail = document.getElementById('mailInput').value.trim();
+  const isForeign = detectForeign(clientMail);
+
+  let lines = [];
+  lines.push('Dear Teresa,');
+  lines.push('');
+  lines.push('Please provide your best quote for the following packaging order:');
+  lines.push('');
+
+  cards.forEach((card, idx) => {
+    const material = card.querySelector('.fp-material').value;
+    const size = card.querySelector('.fp-size').value;
+    const qty = card.querySelector('.fp-qty').value;
+    const notes = card.querySelector('.fp-notes').value || 'CMYK, standard finish';
+    lines.push(`${idx + 1}. ${material} — ${size} — ${qty} pcs`);
+    lines.push(`   Print / finish: ${notes}`);
+    lines.push('');
+  });
+
+  lines.push('Delivery terms: FOB / CIF (please advise)');
+  lines.push('Lead time: standard production time');
+  lines.push('Payment: USD');
+  if (isForeign) lines.push('Note: Client is EU-based — EUR pricing may be required.');
+  lines.push('');
+  lines.push('Best regards,');
+  lines.push('PackPack.pl');
+
+  document.getElementById('quoteOutput').value = lines.join('\n');
+  showStatus('fullprint','QUOTE wygenerowane.','ok');
+}
+
+function copyQuote() {
+  const ta = document.getElementById('quoteOutput');
+  ta.select();
+  document.execCommand('copy');
+  showStatus('fullprint','Skopiowano do schowka.','ok');
+}
+
+function calcTeresa() {
+  const text = document.getElementById('teresaInput').value;
+  if (!text.trim()) { showStatus('fullprint','Wklej odpowiedź Teresy.','err'); return; }
+
+  const usdRate = parseFloat(document.getElementById('rateUsd').value) || 4.05;
+
+  let unitUsd = 0;
+  const patterns = [
+    /USD\s*[\$]?\s*(\d+[.,]?\d*)\s*\/?\s*(pc|piece|szt|unit|per)/i,
+    /(pc|piece|szt|unit)\s*[=:]\s*\$?\s*(\d+[.,]?\d*)/i,
+    /price\s*(per)?\s*[:=]?\s*\$?\s*(\d+[.,]?\d*)/i,
+    /\$\s*(\d+[.,]?\d*)\s*(USD)?/i,
+    /(\d+[.,]?\d*)\s*USD\s*\/?\s*(pc|piece|szt|unit)/i,
+    /cost\s*[:=]?\s*\$?\s*(\d+[.,]?\d*)/i
+  ];
+  for (const re of patterns) {
+    const m = text.match(re);
+    if (m) {
+      const val = parseFloat(m[m.length-1].replace(',','.'));
+      if (!isNaN(val) && val > 0) { unitUsd = val; break; }
+      if (m[1]) {
+        const v2 = parseFloat(m[1].replace(',','.'));
+        if (!isNaN(v2) && v2 > 0) { unitUsd = v2; break; }
+      }
+    }
+  }
+
+  let shipUsd = 0;
+  const shipRe = /(shipping|freight|delivery|transport)\s*[:=]?\s*\$?\s*(\d+[.,]?\d*)/i;
+  const sm = text.match(shipRe);
+  if (sm) shipUsd = parseFloat(sm[2].replace(',','.')) || 0;
+
+  let qty = 0;
+  const qtyRe = /(\d+)\s*(pcs|pieces|szt|units|qty)/i;
+  const qm = text.match(qtyRe);
+  if (qm) qty = parseInt(qm[1], 10) || 0;
+  if (!qty) {
+    const cards = document.querySelectorAll('#fullprintItems .item-card');
+    cards.forEach(c => qty += parseInt(c.querySelector('.fp-qty').value,10) || 0);
+  }
+  if (!qty) qty = 1;
+
+  const unitPln = unitUsd * usdRate;
+  const shipPerUnit = qty > 0 ? (shipUsd * usdRate) / qty : 0;
+  const marginPln = getFullprintMargin(qty);
+  const finalUnit = unitPln + shipPerUnit + marginPln;
+  const totalPln = finalUnit * qty;
+
+  let html = '<table class="result-table"><tbody>' +
+    `<tr><td>Cena zakupu / szt (USD)</td><td>${unitUsd.toFixed(4)} USD</td></tr>` +
+    `<tr><td>Kurs USD/PLN</td><td>${usdRate.toFixed(2)}</td></tr>` +
+    `<tr><td>Cena zakupu / szt (PLN)</td><td>${unitPln.toFixed(2)} PLN</td></tr>` +
+    `<tr><td>Koszt dostawy / szt (PLN)</td><td>${shipPerUnit.toFixed(2)} PLN</td></tr>` +
+    `<tr><td>Marża PackPack / szt (PLN)</td><td>${marginPln.toFixed(2)} PLN</td></tr>` +
+    `<tr><td><strong>Cena finalna dla klienta / szt (PLN)</strong></td><td><strong>${finalUnit.toFixed(2)} PLN</strong></td></tr>` +
+    `<tr><td><strong>Wartość całkowita netto</strong></td><td><strong>${totalPln.toFixed(2)} PLN</strong></td></tr>` +
+    '</tbody></table>';
+  if (unitUsd === 0) html = '<div class="status err">Nie udało się wykryć ceny za sztukę w USD. Upewnij się, że odpowiedź zawiera jawną cenę (np. $0.45/pc).</div>' + html;
+
+  document.getElementById('teresaResults').innerHTML = html;
+}
+
+/* ==================== IMPORT CEN Z CSV ==================== */
+
+function importPricesFromCsv() {
+  const raw = document.getElementById('csvPricesInput').value.trim();
+  if (!raw) { showCsvStatus('Wklej dane CSV.', 'err'); return; }
+
+  const lines = raw.split(/\r?\n/);
+  let imported = 0;
+  let skipped = 0;
+
+  lines.forEach((line, idx) => {
+    if (idx === 0 && line.toLowerCase().includes('nazwa')) return;
+    const parts = line.split(';');
+    if (parts.length < 4) return;
+
+    const nazwa = parts[1] ? parts[1].trim() : '';
+    const cenaRaw = parts[3] ? parts[3].trim().replace(',', '.') : '';
+    if (!nazwa || !cenaRaw || cenaRaw.startsWith('[')) { skipped++; return; }
+
+    const cenaTotal = parseFloat(cenaRaw);
+    if (isNaN(cenaTotal) || cenaTotal <= 0) { skipped++; return; }
+
+    const m = nazwa.match(/^(\d+)\s*szt\.\s+(.+?)\s+(\d+)\s*ml\s*\(/);
+    if (!m) { skipped++; return; }
+    const qty = parseInt(m[1], 10);
+    const productName = m[2].trim();
+    const size = m[3] + 'ml';
+    const unitPrice = Math.round(cenaTotal / qty / 1.23 * 10000) / 10000;
+
+    if (overprintProductPrices[productName] && overprintProductPrices[productName][size] !== undefined) {
+      overprintProductPrices[productName][size] = unitPrice;
+      imported++;
+    } else {
+      skipped++;
+    }
+  });
+
+  showCsvStatus(`Zaimportowano ${imported} cen. Pominięto ${skipped} wierszy (brak w kalkulatorze lub brak ceny).`, imported > 0 ? 'ok' : 'info');
+}
+
+function showCsvStatus(msg, type) {
+  const s = document.getElementById('csvImportStatus');
+  s.className = 'status ' + type;
+  s.textContent = msg;
+  s.classList.remove('hidden');
+}
+
+/* ==================== DRUKOWANIE / PDF ==================== */
+
+function printResults(mode) {
+  const resultsDiv = document.getElementById(mode === 'overprint' ? 'overprintResults' : 'fullprintResults');
+  if (!resultsDiv.innerHTML.trim()) return;
+
+  const now = new Date().toLocaleString('pl-PL');
+  const typeLabel = mode === 'overprint' ? 'Wycena Overprint (zadruk)' : 'Wycena Fullprint (outsourcing)';
+
+  const logoSvg = `<svg width="220" height="48" viewBox="0 0 220 48" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="8" width="100" height="32" rx="6" fill="#F26522"/>
+    <text x="50" y="30" font-family="Arial,sans-serif" font-size="18" font-weight="700" fill="#fff" text-anchor="middle" letter-spacing="1">PACK</text>
+    <text x="112" y="30" font-family="Arial,sans-serif" font-size="22" font-weight="800" fill="#1a1a1a" letter-spacing="1">PACK</text>
+    <rect x="212" y="18" width="6" height="6" rx="3" fill="#F26522"/>
+  </svg>`;
+
+  const html = `<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<title>${typeLabel} — PackPack</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+  body { font-family: 'Inter', 'Segoe UI', Arial, sans-serif; margin: 0; padding: 24px 32px; color: #1a1a1a; background: #fff; }
+  .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #F26522; padding-bottom: 16px; margin-bottom: 20px; }
+  .title-block { text-align: right; }
+  .title-block h1 { margin: 0; font-size: 18px; font-weight: 700; color: #1a1a1a; }
+  .title-block p { margin: 4px 0 0; font-size: 10pt; color: #666; }
+  .meta { font-size: 9pt; color: #777; margin-bottom: 16px; }
+  table { width: 100%; border-collapse: collapse; font-size: 9.5pt; margin-top: 12px; }
+  th, td { border: 1px solid #ddd; padding: 7px 9px; text-align: left; }
+  th { background: #fafafa; font-weight: 600; font-size: 9pt; color: #333; }
+  tr:nth-child(even) { background: #f9f9f9; }
+  .summary { font-weight: 700; font-size: 13pt; margin-top: 14px; color: #F26522; text-align: right; }
+  .info { font-size: 9pt; color: #1565c0; background: #e3f2fd; padding: 6px 10px; border-radius: 6px; margin-top: 8px; display: inline-block; }
+  .footer { margin-top: 40px; border-top: 1px solid #eee; padding-top: 12px; font-size: 8pt; color: #666; display: flex; justify-content: space-between; }
+  .footer strong { color: #1a1a1a; }
+</style>
+</head>
+<body>
+  <div class="header">
+    ${logoSvg}
+    <div class="title-block">
+      <h1>${typeLabel}</h1>
+      <p>Data: ${now}</p>
+    </div>
+  </div>
+  ${resultsDiv.innerHTML}
+  <div class="footer">
+    <div>
+      <strong>Pack Pack Sp. z o.o.</strong><br>
+      NIP: 7272845933 | KRS: 0000867114
+    </div>
+    <div style="text-align:right">
+      666 038 495 | 666 374 391<br>
+      kontakt@packpack.pl | www.packpack.pl
+    </div>
+  </div>
+</body>
+</html>`;
+
+  const iframe = document.createElement('iframe');
+  iframe.style.position = 'fixed';
+  iframe.style.top = '-9999px';
+  iframe.style.left = '-9999px';
+  iframe.style.width = '1px';
+  iframe.style.height = '1px';
+  document.body.appendChild(iframe);
+
+  iframe.contentWindow.document.open();
+  iframe.contentWindow.document.write(html);
+  iframe.contentWindow.document.close();
+
+  setTimeout(() => {
+    iframe.contentWindow.focus();
+    iframe.contentWindow.print();
+    setTimeout(() => { if (iframe.parentNode) iframe.parentNode.removeChild(iframe); }, 2000);
+  }, 500);
+}
+
+/* ==================== PARSOWANIE MAILA ==================== */
+
+function parseMail() {
+  const text = document.getElementById('mailInput').value;
+  if (!text.trim()) { showStatus('mail','Wklej tekst maila.','err'); return; }
+
+  const isForeign = detectForeign(text);
+  if (isForeign) {
+    showStatus('mail','Wykryto klienta zagranicznego — auto EUR.','info');
+  } else {
+    clearStatus('mail');
+  }
+
+  const qtyMatches = [...text.matchAll(/\b(\d{1,6})\s*(szt|sztuk|szt\.|pieces|pcs|pc|units|x)\b/gi)];
+  const sizeMatches = [...text.matchAll(/\b(100|250|500|750|1000|2000|3000)\s*(ml|g|ml)\b/gi)];
+
+  const parsed = [];
+
+  qtyMatches.forEach((qm, i) => {
+    const qty = parseInt(qm[1], 10);
+    const idx = qm.index;
+    let size = '250ml';
+    let dist = Infinity;
+    sizeMatches.forEach(sm => {
+      const d = Math.abs(sm.index - idx);
+      if (d < dist) { dist = d; size = sm[1] + 'ml'; }
+    });
+
+    const ctx = text.substring(Math.max(0, idx-100), Math.min(text.length, idx+100)).toLowerCase();
+    let product = 'Doypack Papier Kraft';
+    if (ctx.includes('biały') || ctx.includes('bialy') || ctx.includes('white')) {
+      if (ctx.includes('aluminium') || ctx.includes('aluminum')) product = 'Doypack Biały Papier Kraft Aluminium';
+      else if (ctx.includes('okien') || ctx.includes('window')) product = 'Doypack Biały Papier Kraft z okienkiem';
+      else if (ctx.includes('biodegrad')) product = 'Doypack Biodegradowalny Biały Papier Kraft';
+      else product = 'Doypack Biały Papier Kraft';
+    } else {
+      if (ctx.includes('aluminium') || ctx.includes('aluminum')) product = 'Doypack Papier Kraft Aluminium';
+      else if (ctx.includes('okien') || ctx.includes('window')) product = 'Doypack Papier Kraft z okienkiem';
+      else if (ctx.includes('kompost')) product = 'Doypack Kompostowalny Papier Kraft';
+      else product = 'Doypack Papier Kraft';
+    }
+
+    let print = 'black';
+    if (ctx.includes('cmyk') || ctx.includes('full-color') || ctx.includes('full color') || ctx.includes('kolor') || ctx.includes('color')) print = 'cmyk';
+
+    let sides = '1';
+    if (ctx.includes('dwustron') || ctx.includes('both') || ctx.includes('two side') || ctx.includes('2-side')) sides = '2';
+
+    parsed.push({ qty, size, product, print, sides });
+  });
+
+  if (!parsed.length) {
+    showStatus('mail','Nie wykryto żadnych pozycji. Sprawdź format maila.','err');
+    return;
+  }
+
+  if (mode === 'overprint') {
+    parsed.forEach(p => addOverprintItem(p));
+  } else {
+    parsed.forEach(p => addFullprintItem({ qty: p.qty, size: p.size, material: 'PET/PE standard' }));
+  }
+
+  showStatus('mail',`Wykryto ${parsed.length} pozycji i dodano do trybu ${mode.toUpperCase()}.`,'ok');
+}
+
+function detectForeign(text) {
+  const t = text.toLowerCase();
+  return /\b(germany|deutschland|united kingdom|uk|england|\.de\b|\.uk\b|\.com\b|france|italy|spain|\.fr\b|\.it\b|\.es\b)/.test(t);
+}
+
+/* ==================== POMOCNICZE ==================== */
+
+function showStatus(context, msg, type) {
+  const el = document.getElementById(context === 'mail' ? 'mailStatus' : 'fullprintResults');
+  if (context === 'fullprint') {
+    const div = document.getElementById('fullprintResults');
+    div.innerHTML = `<div class="status ${type}">${msg}</div>`;
+    return;
+  }
+  if (context === 'overprint') {
+    const div = document.getElementById('overprintResults');
+    div.innerHTML = `<div class="status ${type}">${msg}</div>`;
+    return;
+  }
+  const s = document.getElementById('mailStatus');
+  s.className = 'status ' + type;
+  s.textContent = msg;
+  s.classList.remove('hidden');
+}
+
+function clearStatus(context) {
+  if (context === 'mail') {
+    const s = document.getElementById('mailStatus');
+    s.className = 'status hidden';
+    s.textContent = '';
+  }
+}
+
+function clearMail() {
+  document.getElementById('mailInput').value = '';
+  clearStatus('mail');
+}
+
+function fetchNbp() {
+  fetch('https://api.nbp.pl/api/exchangerates/tables/A/?format=json')
+    .then(r => r.json())
+    .then(data => {
+      const rates = data[0].rates;
+      const usd = rates.find(r => r.code === 'USD');
+      const eur = rates.find(r => r.code === 'EUR');
+      if (usd) document.getElementById('rateUsd').value = usd.mid.toFixed(4);
+      if (eur) document.getElementById('rateEur').value = eur.mid.toFixed(4);
+      showStatus('mail','Kursy NBP pobrane.','ok');
+    })
+    .catch(() => {
+      showStatus('mail','Nie udało się pobrać z NBP (blokada CORS przy pliku lokalnym). Wpisz kursy ręcznie.','err');
+    });
+}
+
+/* ==================== INICJALIZACJA ==================== */
+
+addOverprintItem();
+addFullprintItem();
+</script>
+</body>
+</html>
