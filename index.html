@@ -1071,7 +1071,11 @@ function printResults(mode) {
       <div style="margin-bottom:12px;">
         <button class="btn-secondary" onclick="switchTab('calc')">← Powrót do kalkulatora</button>
       </div>
-      <div class="row" style="margin-bottom:12px;">
+      <div class="row" style="margin-bottom:12px;gap:12px;">
+        <div class="col">
+          <label>Szukaj</label>
+          <input type="text" id="quoteSearch" placeholder="Nr ref, klient, email..." onkeyup="loadQuotes()">
+        </div>
         <div class="col">
           <label>Filtruj status</label>
           <select id="quoteFilter" onchange="loadQuotes()">
@@ -1100,6 +1104,9 @@ function printResults(mode) {
   <div id="tabFeedbackContent" class="hidden">
     <div class="card">
       <h2 style="margin-top:0">💬 Feedback — Udoskonalmy kalkulator</h2>
+      <div style="margin-bottom:12px;">
+        <button class="btn-secondary" onclick="switchTab('calc')">← Powrót do kalkulatora</button>
+      </div>
       <p style="color:#666;font-size:0.9rem;">Zgłoś błąd, zaproponuj funkcję lub zostaw komentarz.</p>
       <div class="row" style="gap:12px;margin-top:12px;">
         <div class="col">
@@ -1464,6 +1471,7 @@ async function saveQuote() {
 async function loadQuotes() {
   if (!currentUser) return;
   const filter = document.getElementById('quoteFilter').value;
+  const search = document.getElementById('quoteSearch').value.trim().toLowerCase();
   
   let query = supabaseClient.from('pp_quotes').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
   if (filter !== 'all') query = query.eq('status', filter);
@@ -1472,6 +1480,18 @@ async function loadQuotes() {
   const list = document.getElementById('quotesList');
   if (error) { list.innerHTML = '<p class="status err">Błąd: ' + error.message + '</p>'; return; }
   if (!data || !data.length) { list.innerHTML = '<p class="status info">Brak wycen.</p>'; return; }
+  
+  // Filter by search term
+  let filtered = data;
+  if (search) {
+    filtered = data.filter(q => 
+      (q.reference_number && q.reference_number.toLowerCase().includes(search)) ||
+      (q.client_name && q.client_name.toLowerCase().includes(search)) ||
+      (q.client_email && q.client_email.toLowerCase().includes(search))
+    );
+  }
+  if (!filtered.length) { list.innerHTML = '<p class="status info">Nie znaleziono wycen pasujących do wyszukiwania.</p>'; return; }
+  data = filtered;
   
   // Check expired
   const now = new Date();
@@ -1482,7 +1502,25 @@ async function loadQuotes() {
     }
   });
   
-  let html = '<table class="result-table"><thead><tr><th>Nr ref</th><th>Typ</th><th>Klient</th><th>Email</th><th>Telefon</th><th>Data</th><th>Wartość</th><th>Status</th><th>Akcje</th></tr></thead><tbody>';
+  // Check for expired quotes and show reminders
+  let reminders = [];
+  const now = new Date();
+  data.forEach(q => {
+    if (q.status === 'sent' && q.sent_at) {
+      const days = (now - new Date(q.sent_at)) / (1000*60*60*24);
+      if (days > 3) { updateQuoteStatus(q.id, 'expired'); }
+      else if (days > 1) { reminders.push(q); }
+    }
+  });
+  
+  let reminderHtml = '';
+  if (reminders.length > 0) {
+    reminderHtml = '<div style="background:#fff3e0;border:1px solid #ff9800;border-radius:8px;padding:12px;margin-bottom:16px;">' +
+      '<strong style="color:#e65100;">📢 Przypomnienie:</strong> Masz ' + reminders.length + ' wycenę/y oczekującą/e na odpowiedź od klienta. ' +
+      '<span style="font-size:0.85rem;color:#666;">Czy skontaktowałeś się z klientem?</span></div>';
+  }
+  
+  let html = reminderHtml + '<table class="result-table"><thead><tr><th>Nr ref</th><th>Typ</th><th>Klient</th><th>Email</th><th>Telefon</th><th>Data</th><th>Wartość</th><th>Status</th><th>Akcje</th></tr></thead><tbody>';
   data.forEach(q => {
     const statusClass = q.status === 'draft' ? 'gray' : q.status === 'sent' ? 'blue' : q.status === 'waiting' ? 'yellow' : q.status === 'expired' ? 'red' : q.status === 'responded' ? 'green' : q.status === 'won' ? 'gold' : 'gray';
     const statusLabel = {draft:'Robocza',sent:'Wysłana',waiting:'Czeka',expired:'Przeterm.',responded:'Odpowiedź',won:'Wygrana',lost:'Przegrana'}[q.status] || q.status;
