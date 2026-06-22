@@ -1322,13 +1322,16 @@ function initSupabase() {
 }
 
 async function initAuth() {
-  const { data: { session } } = await supabaseClient.auth.getSession();
-  if (session?.user) {
-    currentUser = session.user;
-    showLoggedIn(session.user.email);
-    loadQuotes();
-    loadFeedback();
-  } else {
+  try {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (session?.user) {
+      currentUser = session.user;
+      showLoggedIn(session.user.email);
+    } else {
+      showLoggedOut();
+    }
+  } catch (e) {
+    console.error('initAuth error:', e);
     showLoggedOut();
   }
   
@@ -1336,8 +1339,6 @@ async function initAuth() {
     if (session?.user) {
       currentUser = session.user;
       showLoggedIn(session.user.email);
-      loadQuotes();
-      loadFeedback();
     } else {
       currentUser = null;
       showLoggedOut();
@@ -1429,19 +1430,20 @@ function switchTab(tab) {
 /* ==================== SAVE / LOAD QUOTES ==================== */
 
 async function saveQuote() {
-  if (!currentUser) { alert('Zaloguj się, aby zapisać wycenę.'); return; }
-  
-  const type = mode;
-  let items = [];
-  let total = 0;
-  
-  // Get client info from prompt if not already set
-  let clientName = prompt('Nazwa klienta / firma:');
-  if (!clientName) clientName = '';
-  let clientEmail = prompt('Email klienta:');
-  if (!clientEmail) clientEmail = '';
-  let clientPhone = prompt('Telefon klienta:');
-  if (!clientPhone) clientPhone = '';
+  try {
+    if (!currentUser) { alert('Zaloguj się, aby zapisać wycenę.'); return; }
+    
+    const type = mode;
+    let items = [];
+    let total = 0;
+    
+    // Get client info from prompt if not already set
+    let clientName = prompt('Nazwa klienta / firma:');
+    if (!clientName) clientName = '';
+    let clientEmail = prompt('Email klienta:');
+    if (!clientEmail) clientEmail = '';
+    let clientPhone = prompt('Telefon klienta:');
+    if (!clientPhone) clientPhone = '';
   
   if (type === 'overprint') {
     const cards = document.querySelectorAll('#overprintItems .item-card');
@@ -1493,23 +1495,25 @@ async function saveQuote() {
   
   if (error) { alert('Błąd zapisu: ' + error.message); }
   else { alert('Wycena zapisana! Nr: ' + refNum); switchTab('quotes'); }
+  } catch (e) { console.error('saveQuote error:', e); alert('Błąd podczas zapisywania: ' + e.message); }
 }
 
 async function loadQuotes() {
-  if (!currentUser) return;
-  const filterEl = document.getElementById('quoteFilter');
-  const searchEl = document.getElementById('quoteSearch');
-  const filter = filterEl ? filterEl.value : 'all';
-  const search = searchEl ? searchEl.value.trim().toLowerCase() : '';
-  
-  let query = supabaseClient.from('pp_quotes').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
-  if (filter !== 'all') query = query.eq('status', filter);
-  
-  const { data, error } = await query;
-  const list = document.getElementById('quotesList');
-  if (!list) { console.error('quotesList element not found'); return; }
-  if (error) { list.innerHTML = '<p class="status err">Błąd: ' + error.message + '</p>'; return; }
-  if (!data || !data.length) { list.innerHTML = '<p class="status info">Brak wycen.</p>'; return; }
+  try {
+    if (!currentUser) return;
+    const filterEl = document.getElementById('quoteFilter');
+    const searchEl = document.getElementById('quoteSearch');
+    const filter = filterEl ? filterEl.value : 'all';
+    const search = searchEl ? searchEl.value.trim().toLowerCase() : '';
+    
+    let query = supabaseClient.from('pp_quotes').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
+    if (filter !== 'all') query = query.eq('status', filter);
+    
+    const { data, error } = await query;
+    const list = document.getElementById('quotesList');
+    if (!list) return;
+    if (error) { list.innerHTML = '<p class="status err">Błąd: ' + error.message + '</p>'; return; }
+    if (!data || !data.length) { list.innerHTML = '<p class="status info">Brak wycen.</p>'; return; }
   
   // Filter by search term
   let filtered = data;
@@ -1572,6 +1576,7 @@ async function loadQuotes() {
   });
   html += '</tbody></table>';
   list.innerHTML = html;
+  } catch (e) { console.error('loadQuotes error:', e); }
 }
 
 function statusColor(status) {
@@ -1601,38 +1606,43 @@ async function deleteQuote(id) {
 /* ==================== FEEDBACK ==================== */
 
 async function submitFeedback() {
-  if (!currentUser) { alert('Zaloguj się, aby wysłać feedback.'); return; }
-  const category = document.getElementById('fbCategory').value;
-  const content = document.getElementById('fbContent').value.trim();
-  const statusEl = document.getElementById('fbStatus');
-  if (!content) { statusEl.innerHTML = '<span class="status err">Wpisz treść komentarza.</span>'; return; }
-  
-  const { error } = await supabaseClient.from('pp_feedback').insert([{
-    user_id: currentUser.id,
-    user_name: currentUser.email,
-    category: category,
-    content: content
-  }]);
-  
-  if (error) { statusEl.innerHTML = '<span class="status err">Błąd: ' + error.message + '</span>'; }
-  else { statusEl.innerHTML = '<span class="status ok">Feedback wysłany! Dziękujemy.</span>'; document.getElementById('fbContent').value = ''; loadFeedback(); }
+  try {
+    if (!currentUser) { alert('Zaloguj się, aby wysłać feedback.'); return; }
+    const category = document.getElementById('fbCategory').value;
+    const content = document.getElementById('fbContent').value.trim();
+    const statusEl = document.getElementById('fbStatus');
+    if (!content) { statusEl.innerHTML = '<span class="status err">Wpisz treść komentarza.</span>'; return; }
+    
+    const { error } = await supabaseClient.from('pp_feedback').insert([{
+      user_id: currentUser.id,
+      user_name: currentUser.email,
+      category: category,
+      content: content
+    }]);
+    
+    if (error) { statusEl.innerHTML = '<span class="status err">Błąd: ' + error.message + '</span>'; }
+    else { statusEl.innerHTML = '<span class="status ok">Feedback wysłany! Dziękujemy.</span>'; document.getElementById('fbContent').value = ''; loadFeedback(); }
+  } catch (e) { console.error('submitFeedback error:', e); }
 }
 
 async function loadFeedback() {
-  if (!currentUser) return;
-  const { data, error } = await supabaseClient.from('pp_feedback').select('*').order('created_at', { ascending: false });
-  const list = document.getElementById('fbList');
-  if (error || !data || !data.length) { list.innerHTML = '<p style="color:#666;">Brak komentarzy.</p>'; return; }
-  
-  let html = '<h3>Wszystkie komentarze</h3>';
-  data.forEach(fb => {
-    const catLabel = {bug:'🐛 Błąd',feature:'✨ Funkcja',general:'💬 Ogólne'}[fb.category] || '💬';
-    html += `<div style="border:1px solid #e0e0e0;border-radius:8px;padding:10px;margin-bottom:8px;background:#fafafa;">
-      <div style="font-size:0.8rem;color:#666;">${catLabel} · ${fb.user_name} · ${new Date(fb.created_at).toLocaleDateString('pl-PL')}</div>
-      <div style="margin-top:4px;">${fb.content}</div>
-    </div>`;
-  });
-  list.innerHTML = html;
+  try {
+    if (!currentUser) return;
+    const { data, error } = await supabaseClient.from('pp_feedback').select('*').order('created_at', { ascending: false });
+    const list = document.getElementById('fbList');
+    if (!list) return;
+    if (error || !data || !data.length) { list.innerHTML = '<p style="color:#666;">Brak komentarzy.</p>'; return; }
+    
+    let html = '<h3>Wszystkie komentarze</h3>';
+    data.forEach(fb => {
+      const catLabel = {bug:'🐛 Błąd',feature:'✨ Funkcja',general:'💬 Ogólne'}[fb.category] || '💬';
+      html += `<div style="border:1px solid #e0e0e0;border-radius:8px;padding:10px;margin-bottom:8px;background:#fafafa;">
+        <div style="font-size:0.8rem;color:#666;">${catLabel} · ${fb.user_name} · ${new Date(fb.created_at).toLocaleDateString('pl-PL')}</div>
+        <div style="margin-top:4px;">${fb.content}</div>
+      </div>`;
+    });
+    list.innerHTML = html;
+  } catch (e) { console.error('loadFeedback error:', e); }
 }
 
 /* ==================== SAVE BUTTONS ==================== */
