@@ -83,6 +83,7 @@
   .btn-success { background: var(--success); color: #fff; }
   .btn-success:hover { background: #388e3c; }
   .btn-small { padding: 6px 10px; font-size: 0.85rem; }
+  .fp-currency-btn.active { background: var(--accent) !important; color: #fff !important; border-color: var(--accent) !important; }
 
   .mode-toggle { display: flex; gap: 10px; justify-content: center; margin-bottom: 16px; }
   .mode-toggle button { flex: 1; max-width: 240px; padding: 12px; font-size: 1rem; }
@@ -229,6 +230,11 @@
 
   <div id="fullprintSection" class="card mode-section hidden">
     <h2 style="margin-top:0">Fullprint (outsourcing)</h2>
+    <div style="margin-bottom:12px;">
+      <span style="font-size:0.9rem;font-weight:600;color:#666;">Waluta cennika:</span>
+      <button class="fp-currency-btn active" data-curr="PLN" onclick="setFullprintCurrency('PLN')" style="margin-left:6px;padding:4px 14px;border:1px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;font-weight:600;">PLN</button>
+      <button class="fp-currency-btn" data-curr="EUR" onclick="setFullprintCurrency('EUR')" style="margin-left:4px;padding:4px 14px;border:1px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;font-weight:600;">EUR</button>
+    </div>
     <div id="fullprintItems"></div>
     <div class="actions">
       <button class="btn-primary" onclick="addFullprintItem()">+ Dodaj produkt</button>
@@ -414,7 +420,7 @@ const fullprintSizesPerMaterial = {
   "Kompostowalny": ["100ml", "250ml", "500ml", "750ml", "1000ml", "2000ml", "3000ml"]
 };
 
-const fullprintPrices = {
+const fullprintPricesPln = {
   "PET 12 / PE 70-100": {
     "100ml": { "500": 3.90, "1000": 2.24, "5000": 1.40, "10000": 1.20, "15000": 1.06, "20000": 0.94, "50000": 0.64, "100000": 0.54 },
     "250ml": { "500": 3.90, "1000": 2.45, "5000": 1.65, "10000": 1.41, "15000": 1.25, "20000": 1.13, "50000": 0.83, "100000": 0.73 },
@@ -427,10 +433,25 @@ const fullprintPrices = {
   "PET 12 / PE 128": {
     "5000ml": { "500": 8.55, "1000": 7.33, "5000": 4.92, "10000": 3.92, "15000": 3.82, "20000": 3.72, "50000": 3.62, "100000": 3.52 }
   },
-  "Kraft papier": { "100ml":0.40, "250ml":0.45, "500ml":0.50, "750ml":0.55, "1000ml":0.60, "2000ml":0.75, "3000ml":0.90 },
-  "Aluminium": { "100ml":0.50, "250ml":0.55, "500ml":0.60, "750ml":0.70, "1000ml":0.80, "2000ml":1.00, "3000ml":1.20 },
+  "Kraft papier":    { "100ml":0.40, "250ml":0.45, "500ml":0.50, "750ml":0.55, "1000ml":0.60, "2000ml":0.75, "3000ml":0.90 },
+  "Aluminium":       { "100ml":0.50, "250ml":0.55, "500ml":0.60, "750ml":0.70, "1000ml":0.80, "2000ml":1.00, "3000ml":1.20 },
   "Biodegradowalny": { "100ml":0.60, "250ml":0.65, "500ml":0.75, "750ml":0.85, "1000ml":0.95, "2000ml":1.15, "3000ml":1.40 },
-  "Kompostowalny": { "100ml":0.65, "250ml":0.70, "500ml":0.80, "750ml":0.90, "1000ml":1.00, "2000ml":1.25, "3000ml":1.50 }
+  "Kompostowalny":   { "100ml":0.65, "250ml":0.70, "500ml":0.80, "750ml":0.90, "1000ml":1.00, "2000ml":1.25, "3000ml":1.50 }
+};
+
+const fullprintPricesEur = {
+  "PET 12 / PE 70-100": {
+    "100ml":  { "500": 0.91, "1000": 0.53, "5000": 0.33, "10000": 0.28, "15000": 0.25, "20000": 0.22, "50000": 0.15, "100000": 0.13 },
+    "250ml":  { "500": 0.91, "1000": 0.57, "5000": 0.39, "10000": 0.33, "15000": 0.29, "20000": 0.27, "50000": 0.19, "100000": 0.17 },
+    "500ml":  { "500": 0.91, "1000": 0.58, "5000": 0.40, "10000": 0.35, "15000": 0.32, "20000": 0.29, "50000": 0.22, "100000": 0.20 },
+    "750ml":  { "500": 0.91, "1000": 0.63, "5000": 0.45, "10000": 0.40, "15000": 0.38, "20000": 0.36, "50000": 0.34, "100000": 0.32 },
+    "1000ml": { "500": 0.91, "1000": 0.65, "5000": 0.46, "10000": 0.41, "15000": 0.39, "20000": 0.38, "50000": 0.36, "100000": 0.33 },
+    "2000ml": { "500": 0.92, "1000": 0.71, "5000": 0.50, "10000": 0.45, "15000": 0.42, "20000": 0.41, "50000": 0.39, "100000": 0.37 },
+    "3000ml": { "500": 1.15, "1000": 0.88, "5000": 0.61, "10000": 0.56, "15000": 0.54, "20000": 0.53, "50000": 0.51, "100000": 0.48 }
+  },
+  "PET 12 / PE 128": {
+    "5000ml": { "500": 2.00, "1000": 1.72, "5000": 1.15, "10000": 0.92, "15000": 0.89, "20000": 0.87, "50000": 0.85, "100000": 0.82 }
+  }
 };
 
 const fullprintMargins = [
@@ -445,12 +466,32 @@ const fullprintMargins = [
   { min: 100000, max: Infinity, val: 0.55 }
 ];
 
+function getFullprintMargin(qty) {
+  for (const t of fullprintMargins) {
+    if (qty >= t.min && qty <= t.max) return t.val;
+  }
+  return 0;
+}
+
+let fullprintCurrency = 'PLN';
+
+function setFullprintCurrency(curr) {
+  fullprintCurrency = curr;
+  document.querySelectorAll('.fp-currency-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.curr === curr);
+  });
+  document.querySelectorAll('#fullprintItems .item-card').forEach(card => {
+    const id = card.dataset.id;
+    if (id) updateFpPrice(id);
+  });
+}
+
 function getFullprintPrice(material, size, qty) {
-  const p = fullprintPrices[material];
+  const cennik = fullprintCurrency === 'EUR' ? fullprintPricesEur : fullprintPricesPln;
+  const p = cennik[material];
   if (!p || !p[size]) return 0;
   const price = p[size];
-  if (typeof price === 'number') return price; // placeholder materials
-  // tiered pricing (PET 12 / PE 70-100, PET 12 / PE 128)
+  if (typeof price === 'number') return price; // placeholder materials (PLN only)
   const tiers = price;
   const qtys = Object.keys(tiers).map(Number).sort((a, b) => a - b);
   let chosen = qtys[0];
@@ -458,11 +499,6 @@ function getFullprintPrice(material, size, qty) {
     if (qty >= q) chosen = q;
   }
   return tiers[chosen] || 0;
-}
-  for (const t of fullprintMargins) {
-    if (qty >= t.min && qty <= t.max) return t.val;
-  }
-  return 0;
 }
 
 function getOverprintProductPrice(product, size, qty) {
@@ -726,6 +762,8 @@ function calcFullprint() {
   const laczne = document.getElementById('chkLaczne').checked;
   let totalQty = 0;
   const items = [];
+  const activeCennik = fullprintCurrency === 'EUR' ? fullprintPricesEur : fullprintPricesPln;
+  const curSymbol = fullprintCurrency === 'EUR' ? 'EUR' : 'PLN';
 
   cards.forEach(card => {
     const material = card.querySelector('.fp-material').value;
@@ -746,24 +784,29 @@ function calcFullprint() {
   let grandTotal = 0;
   items.forEach(it => {
     const qtyForMargin = laczne ? totalQty : it.qty;
-    const isTiered = typeof (fullprintPrices[it.material]?.[it.size]) === 'object';
-    const marginPln = isTiered ? 0 : getFullprintMargin(qtyForMargin);
-    const clientPrice = it.price + marginPln;
+    const isTiered = typeof (activeCennik[it.material]?.[it.size]) === 'object';
+    const margin = isTiered ? 0 : getFullprintMargin(qtyForMargin);
+    const clientPrice = it.price + margin;
     const total = clientPrice * it.qty;
     grandTotal += total;
     html += `<tr>
       <td>${it.material}</td>
       <td>${it.size}</td>
       <td>${it.qty}</td>
-      <td>${it.price.toFixed(2)} PLN</td>
-      <td>${marginPln.toFixed(2)} PLN</td>
-      <td>${clientPrice.toFixed(2)} PLN</td>
-      <td>${total.toFixed(2)} PLN</td>
+      <td>${it.price.toFixed(2)} ${curSymbol}</td>
+      <td>${margin.toFixed(2)} ${curSymbol}</td>
+      <td>${clientPrice.toFixed(2)} ${curSymbol}</td>
+      <td>${total.toFixed(2)} ${curSymbol}</td>
     </tr>`;
   });
   html += '</tbody></table>';
-  html += `<div class="summary">Suma całkowita (netto): ${grandTotal.toFixed(2)} PLN`;
-  html += ` &nbsp;|&nbsp; Przy kursie EUR/PLN = ${eurRate.toFixed(2)}: ${(grandTotal/eurRate).toFixed(2)} EUR</div>`;
+  html += `<div class="summary">Suma całkowita (netto): ${grandTotal.toFixed(2)} ${curSymbol}`;
+  if (fullprintCurrency === 'PLN') {
+    html += ` &nbsp;|&nbsp; Przy kursie EUR/PLN = ${eurRate.toFixed(2)}: ${(grandTotal/eurRate).toFixed(2)} EUR`;
+  } else {
+    html += ` &nbsp;|&nbsp; Przy kursie EUR/PLN = ${eurRate.toFixed(2)}: ${(grandTotal*eurRate).toFixed(2)} PLN`;
+  }
+  html += '</div>';
   if (laczne) html += `<div class="status info">Użyto łącznych ilości (${totalQty} szt) dla wyższej marży.</div>`;
   document.getElementById('fullprintResults').innerHTML = html;
   document.getElementById('fullprintPrintActions').style.display = 'flex';
