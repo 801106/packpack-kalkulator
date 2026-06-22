@@ -1302,6 +1302,9 @@ function fetchNbp() {
 
 /* ==================== INICJALIZACJA ==================== */
 
+// Version cache buster
+const APP_VERSION = '1.0.1';
+
 
 /* ==================== SUPABASE ==================== */
 
@@ -1674,12 +1677,12 @@ function addSaveButtons() {
 const originalCalcOverprint = calcOverprint;
 calcOverprint = function() {
   originalCalcOverprint();
-  setTimeout(addSaveButtons, 100);
+  setTimeout(() => { try { addSaveButtons(); } catch(e) { console.error(e); } }, 200);
 };
 const originalCalcFullprint = calcFullprint;
 calcFullprint = function() {
   originalCalcFullprint();
-  setTimeout(addSaveButtons, 100);
+  setTimeout(() => { try { addSaveButtons(); } catch(e) { console.error(e); } }, 200);
 };
 
 /* ==================== INIT ==================== */
