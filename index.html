@@ -48,7 +48,8 @@
 
   /* Prawa kolumna - wyceny (overlay drawer) */
   .sidebar-right {
-    width: 380px;
+    width: 55%;
+    min-width: 380px;
     background: var(--card);
     border-left: 1px solid var(--border);
     display: flex;
@@ -251,9 +252,6 @@
     .main-column { width: 100%; padding: 0; }
   }
 
-  @media (max-width: 900px) {
-    .sidebar-right { width: 300px; }
-  }
   .quote-list-item { cursor: pointer; transition: background 0.15s; }
   .quote-list-item:hover { background: #f0f0f0; }
 
