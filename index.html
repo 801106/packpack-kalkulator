@@ -327,7 +327,7 @@
           <button class="btn-danger btn-small" onclick="signOut()">Wyloguj</button>
         </div>
       </div>
-      <button id="showQuotesBtn" class="btn-secondary btn-small" onclick="toggleSidebar()" style="display:none;white-space:nowrap;">▶ Moje wyceny</button>
+      <button id="showQuotesBtn" class="btn-secondary btn-small" onclick="openSidebar()" style="display:none;white-space:nowrap;">◀ Moje wyceny</button>
     </div>
     <div id="authStatus" style="margin-bottom:10px;"></div>
 
@@ -442,7 +442,7 @@
   <div class="sidebar-right" id="sidebarQuotes">
     <div class="sidebar-header">
       <h3>📋 Moje wyceny</h3>
-      <button class="sidebar-toggle" onclick="toggleSidebar()">◀</button>
+      <button class="sidebar-toggle" onclick="closeSidebar()">▶</button>
     </div>
     <div class="sidebar-content">
       <input type="text" class="search-box" id="quoteSearch" placeholder="Szukaj..." onkeyup="loadQuotes()">
@@ -623,15 +623,22 @@ function showPage(page) {
   document.getElementById('pageFeedback').classList.toggle('hidden', page !== 'feedback');
 }
 
-function toggleSidebar() {
+function openSidebar() {
   const sidebar = document.getElementById('sidebarQuotes');
   const btn = document.getElementById('showQuotesBtn');
-  sidebar.classList.toggle('collapsed');
-  if (sidebar.classList.contains('collapsed')) {
-    btn.style.display = 'inline-flex';
-  } else {
-    btn.style.display = 'none';
-  }
+  sidebar.classList.remove('collapsed');
+  btn.style.display = 'none';
+}
+function closeSidebar() {
+  const sidebar = document.getElementById('sidebarQuotes');
+  const btn = document.getElementById('showQuotesBtn');
+  sidebar.classList.add('collapsed');
+  btn.style.display = 'inline-flex';
+}
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebarQuotes');
+  if (sidebar.classList.contains('collapsed')) openSidebar();
+  else closeSidebar();
 }
 
 /* ==================== ITEMS ==================== */
