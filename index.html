@@ -53,13 +53,15 @@
     transition: width 0.3s ease;
   }
   .sidebar-right.collapsed {
-    width: 48px;
+    width: 0;
+    min-width: 0;
+    overflow: hidden;
+    border: none;
+    padding: 0;
   }
+  .sidebar-right.collapsed .sidebar-header,
   .sidebar-right.collapsed .sidebar-content {
-    display: none;
-  }
-  .sidebar-right.collapsed .sidebar-toggle {
-    transform: rotate(180deg);
+    display: none !important;
   }
 
   .sidebar-header {
@@ -319,6 +321,7 @@
           <button class="btn-danger btn-small" onclick="signOut()">Wyloguj</button>
         </div>
       </div>
+      <button id="showQuotesBtn" class="btn-secondary btn-small" onclick="toggleSidebar()" style="display:none;white-space:nowrap;">▶ Moje wyceny</button>
     </div>
     <div id="authStatus" style="margin-bottom:10px;"></div>
 
@@ -615,7 +618,14 @@ function showPage(page) {
 }
 
 function toggleSidebar() {
-  document.getElementById('sidebarQuotes').classList.toggle('collapsed');
+  const sidebar = document.getElementById('sidebarQuotes');
+  const btn = document.getElementById('showQuotesBtn');
+  sidebar.classList.toggle('collapsed');
+  if (sidebar.classList.contains('collapsed')) {
+    btn.style.display = 'inline-flex';
+  } else {
+    btn.style.display = 'none';
+  }
 }
 
 /* ==================== ITEMS ==================== */
@@ -716,8 +726,8 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 let supabaseClient = null; let currentUser = null;
 function initSupabase() { if (typeof window.supabase === 'undefined') { setTimeout(initSupabase, 500); return; } supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); initAuth(); }
 async function initAuth() { try { const { data: { session } } = await supabaseClient.auth.getSession(); if (session?.user) { currentUser = session.user; showLoggedIn(session.user.email); loadQuotes(); } else { showLoggedOut(); } } catch (e) { showLoggedOut(); } supabaseClient.auth.onAuthStateChange((event, session) => { if (session?.user) { currentUser = session.user; showLoggedIn(session.user.email); loadQuotes(); } else { currentUser = null; showLoggedOut(); } }); }
-function showLoggedIn(email) { document.getElementById('authLoggedOut').style.display = 'none'; document.getElementById('authLoggedIn').style.display = 'block'; document.getElementById('authUserName').textContent = email; }
-function showLoggedOut() { document.getElementById('authLoggedOut').style.display = 'block'; document.getElementById('authLoggedIn').style.display = 'none'; }
+function showLoggedIn(email) { document.getElementById('authLoggedOut').style.display = 'none'; document.getElementById('authLoggedIn').style.display = 'block'; document.getElementById('authUserName').textContent = email; const sidebar = document.getElementById('sidebarQuotes'); const btn = document.getElementById('showQuotesBtn'); if (sidebar && sidebar.classList.contains('collapsed')) btn.style.display = 'inline-flex'; else btn.style.display = 'none'; }
+function showLoggedOut() { document.getElementById('authLoggedOut').style.display = 'block'; document.getElementById('authLoggedIn').style.display = 'none'; document.getElementById('showQuotesBtn').style.display = 'none'; }
 async function signIn() { const email = document.getElementById('authEmail').value.trim(); const password = document.getElementById('authPassword').value; const statusEl = document.getElementById('authStatus'); if (!email || !password) { statusEl.innerHTML = '<span class="status err">Wypełnij email i hasło.</span>'; return; } try { const { error } = await supabaseClient.auth.signInWithPassword({ email, password }); if (error) statusEl.innerHTML = '<span class="status err">' + error.message + '</span>'; else statusEl.innerHTML = '<span class="status ok">Zalogowano!</span>'; } catch (e) { statusEl.innerHTML = '<span class="status err">Błąd: ' + e.message + '</span>'; } }
 async function signUp() { const email = document.getElementById('authEmail').value.trim(); const password = document.getElementById('authPassword').value; const statusEl = document.getElementById('authStatus'); if (!email || !password) { statusEl.innerHTML = '<span class="status err">Wypełnij email i hasło.</span>'; return; } if (password.length < 6) { statusEl.innerHTML = '<span class="status err">Hasło min. 6 znaków.</span>'; return; } try { const { error } = await supabaseClient.auth.signUp({ email, password }); if (error) statusEl.innerHTML = '<span class="status err">' + error.message + '</span>'; else statusEl.innerHTML = '<span class="status ok">Konto utworzone! Sprawdź email.</span>'; } catch (e) { statusEl.innerHTML = '<span class="status err">Błąd: ' + e.message + '</span>'; } }
 async function signOut() { try { await supabaseClient.auth.signOut(); } catch (e) {} document.getElementById('authStatus').innerHTML = ''; }
