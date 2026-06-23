@@ -718,14 +718,63 @@ const fullprintOptions = [
   { id: 'euro_hole', label: 'Eurodziurka', surcharge: 0 },
   { id: 'open_zip', label: 'Otwarta struna', surcharge: 0 }
 ];
-const fullprintMargins = [
-  { min: 0, max: 499, val: 0 }, { min: 500, max: 999, val: 1.00 },
-  { min: 1000, max: 4999, val: 0.90 }, { min: 5000, max: 9999, val: 0.80 },
-  { min: 10000, max: 14999, val: 0.75 }, { min: 15000, max: 19999, val: 0.70 },
-  { min: 20000, max: 49999, val: 0.65 }, { min: 50000, max: 99999, val: 0.60 },
-  { min: 100000, max: Infinity, val: 0.55 }
-];
-function getFullprintMargin(qty) { for (const t of fullprintMargins) { if (qty >= t.min && qty <= t.max) return t.val; } return 0; }
+const fullprintMarginsPerMaterial = {
+  "PET 12/PE 70-100": [
+    { min: 0, max: 499, val: 1.00 }, { min: 500, max: 999, val: 1.00 },
+    { min: 1000, max: 4999, val: 1.00 }, { min: 5000, max: 9999, val: 1.00 },
+    { min: 10000, max: 14999, val: 0.90 }, { min: 15000, max: 19999, val: 0.80 },
+    { min: 20000, max: 49999, val: 0.70 }, { min: 50000, max: 99999, val: 0.40 },
+    { min: 100000, max: Infinity, val: 0.30 }
+  ],
+  "PET 12/ALU 7/PE 80-90": [
+    { min: 0, max: 499, val: 1.00 }, { min: 500, max: 999, val: 1.00 },
+    { min: 1000, max: 4999, val: 1.00 }, { min: 5000, max: 9999, val: 1.00 },
+    { min: 10000, max: 14999, val: 0.90 }, { min: 15000, max: 19999, val: 0.80 },
+    { min: 20000, max: 49999, val: 0.70 }, { min: 50000, max: 99999, val: 0.40 },
+    { min: 100000, max: Infinity, val: 0.30 }
+  ],
+  "PET 12/PE 128 (Flat bottom)": [
+    { min: 0, max: 499, val: 1.00 }, { min: 500, max: 999, val: 1.00 },
+    { min: 1000, max: 4999, val: 1.00 }, { min: 5000, max: 9999, val: 1.00 },
+    { min: 10000, max: 14999, val: 0.90 }, { min: 15000, max: 19999, val: 0.80 },
+    { min: 20000, max: 49999, val: 0.70 }, { min: 50000, max: 99999, val: 0.40 },
+    { min: 100000, max: Infinity, val: 0.30 }
+  ],
+  "Papier Kraft": [
+    { min: 0, max: 499, val: 1.00 }, { min: 500, max: 999, val: 1.00 },
+    { min: 1000, max: 4999, val: 1.00 }, { min: 5000, max: 9999, val: 1.00 },
+    { min: 10000, max: 14999, val: 0.90 }, { min: 15000, max: 19999, val: 0.85 },
+    { min: 20000, max: 49999, val: 0.80 }, { min: 50000, max: 99999, val: 0.70 },
+    { min: 100000, max: Infinity, val: 0.60 }
+  ],
+  "PAP/PET/CPP": [
+    { min: 0, max: 499, val: 1.00 }, { min: 500, max: 999, val: 1.00 },
+    { min: 1000, max: 4999, val: 1.00 }, { min: 5000, max: 9999, val: 1.00 },
+    { min: 10000, max: 14999, val: 0.90 }, { min: 15000, max: 19999, val: 0.85 },
+    { min: 20000, max: 49999, val: 0.80 }, { min: 50000, max: 99999, val: 0.70 },
+    { min: 100000, max: Infinity, val: 0.60 }
+  ],
+  "PET/AL/PE Flat bottom + wentyl": [
+    { min: 0, max: 499, val: 1.00 }, { min: 500, max: 999, val: 1.00 },
+    { min: 1000, max: 4999, val: 1.00 }, { min: 5000, max: 9999, val: 1.00 },
+    { min: 10000, max: 14999, val: 0.90 }, { min: 15000, max: 19999, val: 0.85 },
+    { min: 20000, max: 49999, val: 0.80 }, { min: 50000, max: 99999, val: 0.70 },
+    { min: 100000, max: Infinity, val: 0.60 }
+  ],
+  "PET/AL/PE Flat bottom": [
+    { min: 0, max: 499, val: 1.00 }, { min: 500, max: 999, val: 1.00 },
+    { min: 1000, max: 4999, val: 1.00 }, { min: 5000, max: 9999, val: 1.00 },
+    { min: 10000, max: 14999, val: 0.90 }, { min: 15000, max: 19999, val: 0.85 },
+    { min: 20000, max: 49999, val: 0.80 }, { min: 50000, max: 99999, val: 0.70 },
+    { min: 100000, max: Infinity, val: 0.60 }
+  ]
+};
+function getFullprintMargin(material, qty) {
+  const tiers = fullprintMarginsPerMaterial[material];
+  if (!tiers) return 0;
+  for (const t of tiers) { if (qty >= t.min && qty <= t.max) return t.val; }
+  return 0;
+}
 function getFullprintPrice(material, size, qty) {
   const p = fullprintPrices[material]; if (!p || !p[size]) return 0; const price = p[size];
   if (typeof price === 'number') return price; const tiers = price; const qtys = Object.keys(tiers).map(Number).sort((a,b)=>a-b);
@@ -864,16 +913,18 @@ function calcFullprint() {
     totalQty += qty;
   });
   const eurRate = parseFloat(document.getElementById('rateEur').value) || 4.35;
-  let html = '<table class="result-table"><thead><tr><th>Materiał</th><th>Rozmiar</th><th>Wykończenie</th><th>Ilość</th><th>Cena zakupu</th><th>Opcje</th><th>Cena klienta</th><th>Wartość</th></tr></thead><tbody>';
+  let html = '<table class="result-table"><thead><tr><th>Materiał</th><th>Rozmiar</th><th>Wykończenie</th><th>Ilość</th><th>Cena zakupu</th><th>Marża</th><th>Opcje</th><th>Cena klienta</th><th>Wartość</th></tr></thead><tbody>';
   let grandTotal = 0;
   items.forEach(it => {
-    const clientPrice = it.price + it.surcharge;
+    const qtyForMargin = laczne ? totalQty : it.qty;
+    const marginPln = getFullprintMargin(it.material, qtyForMargin);
+    const clientPrice = it.price + marginPln + it.surcharge;
     const total = clientPrice * it.qty;
     grandTotal += total;
     const optLabels = [];
     for (const opt of fullprintOptions) { if (it.options[opt.id]) optLabels.push(opt.label); }
     const optText = optLabels.length ? optLabels.join(', ') : '—';
-    html += `<tr><td>${it.material}</td><td>${it.size}</td><td>${it.finish==='glossy'?'Glossy':'Matt'}</td><td>${it.qty}</td><td>${it.price.toFixed(2)}</td><td>${optText}</td><td>${clientPrice.toFixed(2)}</td><td>${total.toFixed(2)}</td></tr>`;
+    html += `<tr><td>${it.material}</td><td>${it.size}</td><td>${it.finish==='glossy'?'Glossy':'Matt'}</td><td>${it.qty}</td><td>${it.price.toFixed(2)}</td><td>${marginPln.toFixed(2)}</td><td>${optText}</td><td>${clientPrice.toFixed(2)}</td><td>${total.toFixed(2)}</td></tr>`;
   });
   html += '</tbody></table>';
   html += `<div class="summary">Suma netto: ${grandTotal.toFixed(2)} PLN | EUR: ${(grandTotal/eurRate).toFixed(2)}</div>`;
@@ -946,7 +997,8 @@ async function generateQuoteEnEur() {
     const optSurcharge = getFullprintOptionsSurcharge(Object.fromEntries(
       Array.from(card.querySelectorAll('.fp-opt:checked')).map(cb => [cb.dataset.opt, true])
     ));
-    const unitPricePln = pricePln + optSurcharge;
+    const marginPln = getFullprintMargin(material, qty);
+    const unitPricePln = pricePln + marginPln + optSurcharge;
     const unitPriceEur = unitPricePln / eurRate;
     lines.push(`${idx+1}. ${material} — ${size} — ${finish === 'glossy' ? 'Glossy' : 'Matt'} — ${qty} pcs`);
     lines.push(`   Print: ${notes}`);
