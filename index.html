@@ -467,7 +467,8 @@
         <h3 style="font-size:0.95rem;margin-top:16px;">QUOTE do kontrahenta</h3>
         <textarea id="quoteOutput" class="quote-box" readonly placeholder="Kliknij 'Generuj QUOTE'..." style="min-height:140px"></textarea>
         <div class="actions">
-          <button class="btn-primary btn-small" onclick="generateQuote()">Generuj</button>
+          <button class="btn-primary btn-small" onclick="generateQuote()">Generuj PL</button>
+          <button class="btn-primary btn-small" onclick="generateQuoteEnEur()">Generuj EN + EUR</button>
           <button class="btn-secondary btn-small" onclick="copyQuote()">Kopiuj</button>
         </div>
 
@@ -631,33 +632,92 @@ const overprintPrintPrices = {
   "5000ml": { "black": { 100: 1.29, 250: 1.00, 1000: 0.90 }, "cmyk": { 100: 1.49, 250: 1.20, 1000: 1.10 } }
 };
 
-const fullprintMaterials = ["PET 12 / PE 70-100", "PET 12 / PE 128", "Kraft papier", "Aluminium", "Biodegradowalny", "Kompostowalny"];
+const fullprintMaterials = [
+  "PET 12/PE 70-100",
+  "PET 12/ALU 7/PE 80-90",
+  "PET 12/PE 128 (Flat bottom)",
+  "Papier Kraft",
+  "PAP/PET/CPP",
+  "PET/AL/PE Flat bottom + wentyl",
+  "PET/AL/PE Flat bottom"
+];
 const fullprintSizesPerMaterial = {
-  "PET 12 / PE 70-100": ["100ml","250ml","500ml","750ml","1000ml","2000ml","3000ml"],
-  "PET 12 / PE 128": ["5000ml"],
-  "Kraft papier": ["100ml","250ml","500ml","750ml","1000ml","2000ml","3000ml"],
-  "Aluminium": ["100ml","250ml","500ml","750ml","1000ml","2000ml","3000ml"],
-  "Biodegradowalny": ["100ml","250ml","500ml","750ml","1000ml","2000ml","3000ml"],
-  "Kompostowalny": ["100ml","250ml","500ml","750ml","1000ml","2000ml","3000ml"]
+  "PET 12/PE 70-100": ["100ml","250ml","500ml","750ml","1000ml","2000ml","3000ml"],
+  "PET 12/ALU 7/PE 80-90": ["100ml","250ml","500ml","750ml","1000ml","2000ml","3000ml"],
+  "PET 12/PE 128 (Flat bottom)": ["5000ml"],
+  "Papier Kraft": ["100ml","250ml","500ml","750ml","1000ml","2000ml","3000ml"],
+  "PAP/PET/CPP": ["100ml","250ml","500ml","750ml","1000ml","2000ml","3000ml"],
+  "PET/AL/PE Flat bottom + wentyl": ["500ml","1000ml","2000ml","3000ml","5000ml"],
+  "PET/AL/PE Flat bottom": ["500ml","1000ml","2000ml","3000ml","5000ml"]
 };
 const fullprintPrices = {
-  "PET 12 / PE 70-100": {
-    "100ml": { "500": 3.90, "1000": 2.24, "5000": 1.40, "10000": 1.20, "15000": 1.06, "20000": 0.94, "50000": 0.64, "100000": 0.54 },
-    "250ml": { "500": 3.90, "1000": 2.45, "5000": 1.65, "10000": 1.41, "15000": 1.25, "20000": 1.13, "50000": 0.83, "100000": 0.73 },
-    "500ml": { "500": 3.90, "1000": 2.47, "5000": 1.73, "10000": 1.48, "15000": 1.36, "20000": 1.24, "50000": 0.94, "100000": 0.84 },
-    "750ml": { "500": 3.90, "1000": 2.69, "5000": 1.94, "10000": 1.70, "15000": 1.61, "20000": 1.55, "50000": 1.45, "100000": 1.35 },
-    "1000ml": { "500": 3.90, "1000": 2.78, "5000": 1.98, "10000": 1.76, "15000": 1.69, "20000": 1.63, "50000": 1.53, "100000": 1.43 },
-    "2000ml": { "500": 3.93, "1000": 3.01, "5000": 2.14, "10000": 1.91, "15000": 1.81, "20000": 1.76, "50000": 1.66, "100000": 1.56 },
-    "3000ml": { "500": 4.93, "1000": 3.75, "5000": 2.60, "10000": 2.41, "15000": 2.29, "20000": 2.27, "50000": 2.17, "100000": 2.07 }
+  "PET 12/PE 70-100": {
+    "100ml": { 500: 3.90, 1000: 2.24, 5000: 1.40, 10000: 1.20, 15000: 1.06, 20000: 0.94, 50000: 0.64, 100000: 0.54 },
+    "250ml": { 500: 3.90, 1000: 2.45, 5000: 1.65, 10000: 1.41, 15000: 1.25, 20000: 1.13, 50000: 0.83, 100000: 0.73 },
+    "500ml": { 500: 3.90, 1000: 2.47, 5000: 1.73, 10000: 1.48, 15000: 1.36, 20000: 1.24, 50000: 0.94, 100000: 0.84 },
+    "750ml": { 500: 3.90, 1000: 2.69, 5000: 1.94, 10000: 1.70, 15000: 1.61, 20000: 1.55, 50000: 1.45, 100000: 1.35 },
+    "1000ml": { 500: 3.90, 1000: 2.78, 5000: 1.98, 10000: 1.76, 15000: 1.69, 20000: 1.63, 50000: 1.53, 100000: 1.43 },
+    "2000ml": { 500: 3.93, 1000: 3.01, 5000: 2.14, 10000: 1.91, 15000: 1.81, 20000: 1.76, 50000: 1.66, 100000: 1.56 },
+    "3000ml": { 500: 4.93, 1000: 3.75, 5000: 2.60, 10000: 2.41, 15000: 2.29, 20000: 2.27, 50000: 2.17, 100000: 2.07 }
   },
-  "PET 12 / PE 128": {
-    "5000ml": { "500": 8.55, "1000": 7.33, "5000": 4.92, "10000": 3.92, "15000": 3.82, "20000": 3.72, "50000": 3.62, "100000": 3.52 }
+  "PET 12/ALU 7/PE 80-90": {
+    "100ml": { 500: 3.90, 1000: 2.45, 5000: 1.56, 10000: 1.36, 15000: 1.20, 20000: 1.07, 50000: 0.64, 100000: 0.54 },
+    "250ml": { 500: 3.90, 1000: 2.82, 5000: 1.92, 10000: 1.62, 15000: 1.47, 20000: 1.34, 50000: 0.83, 100000: 0.73 },
+    "500ml": { 500: 3.97, 1000: 2.85, 5000: 2.10, 10000: 1.81, 15000: 1.67, 20000: 1.61, 50000: 0.94, 100000: 0.84 },
+    "750ml": { 500: 4.40, 1000: 3.30, 5000: 2.44, 10000: 2.13, 15000: 2.02, 20000: 1.99, 50000: 1.45, 100000: 1.35 },
+    "1000ml": { 500: 4.49, 1000: 3.62, 5000: 2.56, 10000: 2.36, 15000: 2.22, 20000: 2.16, 50000: 1.53, 100000: 1.43 },
+    "2000ml": { 500: 4.70, 1000: 3.82, 5000: 2.80, 10000: 2.52, 15000: 2.46, 20000: 2.39, 50000: 1.66, 100000: 1.56 },
+    "3000ml": { 500: 6.41, 1000: 5.11, 5000: 3.51, 10000: 3.30, 15000: 3.19, 20000: 3.08, 50000: 2.17, 100000: 2.07 }
   },
-  "Kraft papier": { "100ml":0.40, "250ml":0.45, "500ml":0.50, "750ml":0.55, "1000ml":0.60, "2000ml":0.75, "3000ml":0.90 },
-  "Aluminium": { "100ml":0.50, "250ml":0.55, "500ml":0.60, "750ml":0.70, "1000ml":0.80, "2000ml":1.00, "3000ml":1.20 },
-  "Biodegradowalny": { "100ml":0.60, "250ml":0.65, "500ml":0.75, "750ml":0.85, "1000ml":0.95, "2000ml":1.15, "3000ml":1.40 },
-  "Kompostowalny": { "100ml":0.65, "250ml":0.70, "500ml":0.80, "750ml":0.90, "1000ml":1.00, "2000ml":1.25, "3000ml":1.50 }
+  "PET 12/PE 128 (Flat bottom)": {
+    "5000ml": { 500: 8.55, 1000: 7.33, 5000: 4.92, 10000: 3.92, 15000: 3.82, 20000: 3.72, 50000: 3.62, 100000: 3.52 }
+  },
+  "Papier Kraft": {
+    "100ml": { 500: 4.20, 1000: 3.00, 5000: 2.10, 10000: 1.80, 15000: 1.65, 20000: 1.55, 50000: 1.35, 100000: 1.25 },
+    "250ml": { 500: 4.40, 1000: 3.20, 5000: 2.30, 10000: 2.00, 15000: 1.85, 20000: 1.75, 50000: 1.55, 100000: 1.45 },
+    "500ml": { 500: 4.60, 1000: 3.40, 5000: 2.50, 10000: 2.20, 15000: 2.05, 20000: 1.95, 50000: 1.75, 100000: 1.65 },
+    "750ml": { 500: 4.90, 1000: 3.70, 5000: 2.80, 10000: 2.50, 15000: 2.35, 20000: 2.25, 50000: 2.05, 100000: 1.95 },
+    "1000ml": { 500: 5.20, 1000: 4.00, 5000: 3.10, 10000: 2.80, 15000: 2.65, 20000: 2.55, 50000: 2.35, 100000: 2.25 },
+    "2000ml": { 500: 5.80, 1000: 4.60, 5000: 3.70, 10000: 3.40, 15000: 3.25, 20000: 3.15, 50000: 2.95, 100000: 2.85 },
+    "3000ml": { 500: 6.50, 1000: 5.30, 5000: 4.40, 10000: 4.10, 15000: 3.95, 20000: 3.85, 50000: 3.65, 100000: 3.55 }
+  },
+  "PAP/PET/CPP": {
+    "100ml": { 500: 3.80, 1000: 2.60, 5000: 1.70, 10000: 1.40, 15000: 1.25, 20000: 1.15, 50000: 0.95, 100000: 0.85 },
+    "250ml": { 500: 4.00, 1000: 2.80, 5000: 1.90, 10000: 1.60, 15000: 1.45, 20000: 1.35, 50000: 1.15, 100000: 1.05 },
+    "500ml": { 500: 4.20, 1000: 3.00, 5000: 2.10, 10000: 1.80, 15000: 1.65, 20000: 1.55, 50000: 1.35, 100000: 1.25 },
+    "750ml": { 500: 4.50, 1000: 3.30, 5000: 2.40, 10000: 2.10, 15000: 1.95, 20000: 1.85, 50000: 1.65, 100000: 1.55 },
+    "1000ml": { 500: 4.80, 1000: 3.60, 5000: 2.70, 10000: 2.40, 15000: 2.25, 20000: 2.15, 50000: 1.95, 100000: 1.85 },
+    "2000ml": { 500: 5.40, 1000: 4.20, 5000: 3.30, 10000: 3.00, 15000: 2.85, 20000: 2.75, 50000: 2.55, 100000: 2.45 },
+    "3000ml": { 500: 6.10, 1000: 4.90, 5000: 4.00, 10000: 3.70, 15000: 3.55, 20000: 3.45, 50000: 3.25, 100000: 3.15 }
+  },
+  "PET/AL/PE Flat bottom + wentyl": {
+    "500ml": { 500: 5.50, 1000: 4.30, 5000: 3.20, 10000: 2.90, 15000: 2.75, 20000: 2.65, 50000: 2.45, 100000: 2.35 },
+    "1000ml": { 500: 5.80, 1000: 4.60, 5000: 3.50, 10000: 3.20, 15000: 3.05, 20000: 2.95, 50000: 2.75, 100000: 2.65 },
+    "2000ml": { 500: 6.40, 1000: 5.20, 5000: 4.10, 10000: 3.80, 15000: 3.65, 20000: 3.55, 50000: 3.35, 100000: 3.25 },
+    "3000ml": { 500: 7.10, 1000: 5.90, 5000: 4.80, 10000: 4.50, 15000: 4.35, 20000: 4.25, 50000: 4.05, 100000: 3.95 },
+    "5000ml": { 500: 8.80, 1000: 7.60, 5000: 5.50, 10000: 4.80, 15000: 4.65, 20000: 4.55, 50000: 4.35, 100000: 4.25 }
+  },
+  "PET/AL/PE Flat bottom": {
+    "500ml": { 500: 5.10, 1000: 3.90, 5000: 2.80, 10000: 2.50, 15000: 2.35, 20000: 2.25, 50000: 2.05, 100000: 1.95 },
+    "1000ml": { 500: 5.40, 1000: 4.20, 5000: 3.10, 10000: 2.80, 15000: 2.65, 20000: 2.55, 50000: 2.35, 100000: 2.25 },
+    "2000ml": { 500: 6.00, 1000: 4.80, 5000: 3.70, 10000: 3.40, 15000: 3.25, 20000: 3.15, 50000: 2.95, 100000: 2.85 },
+    "3000ml": { 500: 6.70, 1000: 5.50, 5000: 4.40, 10000: 4.10, 15000: 3.95, 20000: 3.85, 50000: 3.65, 100000: 3.55 },
+    "5000ml": { 500: 8.40, 1000: 7.20, 5000: 5.10, 10000: 4.40, 15000: 4.25, 20000: 4.15, 50000: 3.95, 100000: 3.85 }
+  }
 };
+const fullprintOptions = [
+  { id: 'round_corners', label: 'Zaokrąglone rogi', surcharge: 0 },
+  { id: 'zip_lock', label: 'Struna (zip lock)', surcharge: 0 },
+  { id: 'tear_notch', label: 'Nacinnik (tear notch)', surcharge: 0 },
+  { id: 'metallized', label: 'Metaliza', surcharge: 0 },
+  { id: 'holographic', label: 'Holografic effect', surcharge: 0 },
+  { id: 'soft_touch', label: 'Soft touch', surcharge: 0 },
+  { id: 'coffee_valve', label: 'Wentyl do kawy', surcharge: 0.40 },
+  { id: 'hot_foil', label: 'Hot foil', surcharge: 0 },
+  { id: 'euro_hanger', label: 'Eurozawieszka', surcharge: 0 },
+  { id: 'euro_hole', label: 'Eurodziurka', surcharge: 0 },
+  { id: 'open_zip', label: 'Otwarta struna', surcharge: 0 }
+];
 const fullprintMargins = [
   { min: 0, max: 499, val: 0 }, { min: 500, max: 999, val: 1.00 },
   { min: 1000, max: 4999, val: 0.90 }, { min: 5000, max: 9999, val: 0.80 },
@@ -665,12 +725,19 @@ const fullprintMargins = [
   { min: 20000, max: 49999, val: 0.65 }, { min: 50000, max: 99999, val: 0.60 },
   { min: 100000, max: Infinity, val: 0.55 }
 ];
-
 function getFullprintMargin(qty) { for (const t of fullprintMargins) { if (qty >= t.min && qty <= t.max) return t.val; } return 0; }
 function getFullprintPrice(material, size, qty) {
   const p = fullprintPrices[material]; if (!p || !p[size]) return 0; const price = p[size];
   if (typeof price === 'number') return price; const tiers = price; const qtys = Object.keys(tiers).map(Number).sort((a,b)=>a-b);
   let chosen = qtys[0]; for (const q of qtys) { if (qty >= q) chosen = q; } return tiers[chosen] || 0;
+}
+function getFullprintOptionsSurcharge(options) {
+  if (!options) return 0;
+  let total = 0;
+  for (const opt of fullprintOptions) {
+    if (options[opt.id]) total += opt.surcharge;
+  }
+  return total;
 }
 function getOverprintProductPrice(product, size, qty) {
   const p = overprintProductPrices[product]; if (!p || !p[size]) return 0; const tiers = p[size]; const qtys = Object.keys(tiers).map(Number).sort((a,b)=>a-b);
@@ -750,15 +817,20 @@ function addFullprintItem(data) {
   const initialMaterial = data && data.material ? data.material : fullprintMaterials[0];
   const availableSizes = fullprintSizesPerMaterial[initialMaterial] || [];
   const sizeOptions = availableSizes.map(s => `<option value="${s}">${s}</option>`).join('');
+  const optionsHtml = fullprintOptions.map(opt => 
+    `<label style="font-size:0.8rem;display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" class="fp-opt" data-opt="${opt.id}"> ${opt.label}</label>`
+  ).join('');
   div.innerHTML = `
     <div class="item-header"><span>Pozycja #${id}</span><button class="btn-danger btn-small" onclick="removeItem('fp-item-${id}')">Usuń</button></div>
     <div class="item-grid">
       <div class="field"><label>Materiał</label><select class="fp-material" onchange="updateFpMaterial(${id})">${matOptions}</select></div>
       <div class="field"><label>Rozmiar</label><select class="fp-size" onchange="updateFpPrice(${id})">${sizeOptions}</select></div>
+      <div class="field"><label>Wykończenie</label><select class="fp-finish"><option value="glossy">Glossy (błyszczące)</option><option value="matt">Matt (matowe)</option></select></div>
       <div class="field"><label>Cena zakupu</label><input type="number" step="0.01" class="fp-price" placeholder="auto"></div>
       <div class="field"><label>Ilość</label><input type="number" min="1" class="fp-qty" value="${data && data.qty ? data.qty : 500}"></div>
       <div class="field"><label>Uwagi do QUOTE</label><input type="text" class="fp-notes" placeholder="np. CMYK, mat"></div>
-    </div>`;
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;">${optionsHtml}</div>`;
   container.appendChild(div); if (data && data.material) div.querySelector('.fp-material').value = data.material; if (data && data.size) div.querySelector('.fp-size').value = data.size; updateFpPrice(id);
 }
 function updateFpMaterial(id) { const card = document.querySelector(`#fp-item-${id}`); if (!card) return; const mat = card.querySelector('.fp-material').value; const sizeSelect = card.querySelector('.fp-size'); const sizes = fullprintSizesPerMaterial[mat] || []; sizeSelect.innerHTML = sizes.map(s => `<option value="${s}">${s}</option>`).join(''); updateFpPrice(id); }
@@ -778,16 +850,118 @@ function calcOverprint() {
 function calcFullprint() {
   const cards = document.querySelectorAll('#fullprintItems .item-card'); if (!cards.length) { showStatus('fullprint','Dodaj pozycję.','err'); return; }
   const laczne = document.getElementById('chkLaczne').checked; let totalQty = 0; const items = [];
-  cards.forEach(card => { const material = card.querySelector('.fp-material').value; const size = card.querySelector('.fp-size').value; const qty = parseInt(card.querySelector('.fp-qty').value, 10) || 0; const priceInput = parseFloat(card.querySelector('.fp-price').value); const price = isNaN(priceInput) ? getFullprintPrice(material, size, qty) : priceInput; items.push({ material, size, qty, price }); totalQty += qty; });
+  cards.forEach(card => {
+    const material = card.querySelector('.fp-material').value;
+    const size = card.querySelector('.fp-size').value;
+    const finish = card.querySelector('.fp-finish').value;
+    const qty = parseInt(card.querySelector('.fp-qty').value, 10) || 0;
+    const priceInput = parseFloat(card.querySelector('.fp-price').value);
+    const price = isNaN(priceInput) ? getFullprintPrice(material, size, qty) : priceInput;
+    const options = {};
+    card.querySelectorAll('.fp-opt:checked').forEach(cb => { options[cb.dataset.opt] = true; });
+    const surcharge = getFullprintOptionsSurcharge(options);
+    items.push({ material, size, finish, qty, price, surcharge, options });
+    totalQty += qty;
+  });
   const eurRate = parseFloat(document.getElementById('rateEur').value) || 4.35;
-  let html = '<table class="result-table"><thead><tr><th>Materiał</th><th>Rozmiar</th><th>Ilość</th><th>Cena zakupu</th><th>Marża</th><th>Cena klienta</th><th>Wartość</th></tr></thead><tbody>';
-  let grandTotal = 0; items.forEach(it => { const qtyForMargin = laczne ? totalQty : it.qty; const isTiered = typeof (fullprintPrices[it.material]?.[it.size]) === 'object'; const marginPln = isTiered ? 0 : getFullprintMargin(qtyForMargin); const clientPrice = it.price + marginPln; const total = clientPrice * it.qty; grandTotal += total; html += `<tr><td>${it.material}</td><td>${it.size}</td><td>${it.qty}</td><td>${it.price.toFixed(2)}</td><td>${marginPln.toFixed(2)}</td><td>${clientPrice.toFixed(2)}</td><td>${total.toFixed(2)}</td></tr>`; });
-  html += '</tbody></table>'; html += `<div class="summary">Suma netto: ${grandTotal.toFixed(2)} PLN | EUR: ${(grandTotal/eurRate).toFixed(2)}</div>`; if (laczne) html += `<div class="status info">Łączne: ${totalQty} szt</div>`;
-  document.getElementById('fullprintResults').innerHTML = html; document.getElementById('fullprintPrintActions').style.display = 'flex';
+  let html = '<table class="result-table"><thead><tr><th>Materiał</th><th>Rozmiar</th><th>Wykończenie</th><th>Ilość</th><th>Cena zakupu</th><th>Opcje</th><th>Cena klienta</th><th>Wartość</th></tr></thead><tbody>';
+  let grandTotal = 0;
+  items.forEach(it => {
+    const clientPrice = it.price + it.surcharge;
+    const total = clientPrice * it.qty;
+    grandTotal += total;
+    const optLabels = [];
+    for (const opt of fullprintOptions) { if (it.options[opt.id]) optLabels.push(opt.label); }
+    const optText = optLabels.length ? optLabels.join(', ') : '—';
+    html += `<tr><td>${it.material}</td><td>${it.size}</td><td>${it.finish==='glossy'?'Glossy':'Matt'}</td><td>${it.qty}</td><td>${it.price.toFixed(2)}</td><td>${optText}</td><td>${clientPrice.toFixed(2)}</td><td>${total.toFixed(2)}</td></tr>`;
+  });
+  html += '</tbody></table>';
+  html += `<div class="summary">Suma netto: ${grandTotal.toFixed(2)} PLN | EUR: ${(grandTotal/eurRate).toFixed(2)}</div>`;
+  if (laczne) html += `<div class="status info">Łączne: ${totalQty} szt</div>`;
+  document.getElementById('fullprintResults').innerHTML = html;
+  document.getElementById('fullprintPrintActions').style.display = 'flex';
 }
 
 /* ==================== TERESOMATY ==================== */
-function generateQuote() { const cards = document.querySelectorAll('#fullprintItems .item-card'); if (!cards.length) { showStatus('fullprint','Dodaj pozycje fullprint.','err'); return; } const isForeign = detectForeign(document.getElementById('mailInput').value); let lines = []; lines.push('Dear Teresa,'); lines.push(''); lines.push('Please provide your best quote:'); lines.push(''); cards.forEach((card, idx) => { const material = card.querySelector('.fp-material').value; const size = card.querySelector('.fp-size').value; const qty = card.querySelector('.fp-qty').value; const notes = card.querySelector('.fp-notes').value || 'CMYK, standard'; lines.push(`${idx+1}. ${material} — ${size} — ${qty} pcs`); lines.push(`   Print: ${notes}`); lines.push(''); }); lines.push('Delivery: FOB / CIF'); lines.push('Payment: USD'); if (isForeign) lines.push('Note: EU client — EUR pricing may be required.'); lines.push(''); lines.push('Best regards,'); lines.push('PackPack.pl'); document.getElementById('quoteOutput').value = lines.join('\n'); showStatus('fullprint','QUOTE wygenerowane.','ok'); }
+function generateQuote() {
+  const cards = document.querySelectorAll('#fullprintItems .item-card');
+  if (!cards.length) { showStatus('fullprint','Dodaj pozycje fullprint.','err'); return; }
+  const isForeign = detectForeign(document.getElementById('mailInput').value);
+  let lines = [];
+  lines.push('Dzień dobry,'); lines.push('');
+  lines.push('Proszę o wycenę:'); lines.push('');
+  cards.forEach((card, idx) => {
+    const material = card.querySelector('.fp-material').value;
+    const size = card.querySelector('.fp-size').value;
+    const finish = card.querySelector('.fp-finish').value;
+    const qty = card.querySelector('.fp-qty').value;
+    const notes = card.querySelector('.fp-notes').value || 'CMYK, standard';
+    const optLabels = [];
+    card.querySelectorAll('.fp-opt:checked').forEach(cb => {
+      const optDef = fullprintOptions.find(o => o.id === cb.dataset.opt);
+      if (optDef) optLabels.push(optDef.label);
+    });
+    lines.push(`${idx+1}. ${material} — ${size} — ${finish === 'glossy' ? 'Glossy' : 'Matt'} — ${qty} szt`);
+    lines.push(`   Nadruk: ${notes}`);
+    if (optLabels.length) lines.push(`   Opcje: ${optLabels.join(', ')}`);
+    lines.push('');
+  });
+  lines.push('Dostawa: EXW / DDP');
+  lines.push('Płatność: przelew 14 dni');
+  if (isForeign) lines.push('Uwaga: klient zagraniczny — wymagana cena EUR.');
+  lines.push(''); lines.push('Pozdrawiam,'); lines.push('PackPack.pl');
+  document.getElementById('quoteOutput').value = lines.join('\n');
+  showStatus('fullprint','QUOTE PL wygenerowane.','ok');
+}
+
+async function generateQuoteEnEur() {
+  const cards = document.querySelectorAll('#fullprintItems .item-card');
+  if (!cards.length) { showStatus('fullprint','Dodaj pozycje fullprint.','err'); return; }
+  // Fetch EUR rate first
+  let eurRate = parseFloat(document.getElementById('rateEur').value) || 4.35;
+  try {
+    const res = await fetch('https://api.nbp.pl/api/exchangerates/rates/a/eur/?format=json');
+    const data = await res.json();
+    if (data?.rates?.[0]?.mid) {
+      eurRate = data.rates[0].mid;
+      document.getElementById('rateEur').value = eurRate.toFixed(4);
+    }
+  } catch (e) { console.log('NBP EUR fetch failed, using cached rate'); }
+
+  let lines = [];
+  lines.push('Dear Sir/Madam,'); lines.push('');
+  lines.push('Please provide your best quote for the following:'); lines.push('');
+  cards.forEach((card, idx) => {
+    const material = card.querySelector('.fp-material').value;
+    const size = card.querySelector('.fp-size').value;
+    const finish = card.querySelector('.fp-finish').value;
+    const qty = parseInt(card.querySelector('.fp-qty').value, 10) || 0;
+    const notes = card.querySelector('.fp-notes').value || 'CMYK, standard';
+    const optLabels = [];
+    card.querySelectorAll('.fp-opt:checked').forEach(cb => {
+      const optDef = fullprintOptions.find(o => o.id === cb.dataset.opt);
+      if (optDef) optLabels.push(optDef.label);
+    });
+    const pricePln = getFullprintPrice(material, size, qty);
+    const optSurcharge = getFullprintOptionsSurcharge(Object.fromEntries(
+      Array.from(card.querySelectorAll('.fp-opt:checked')).map(cb => [cb.dataset.opt, true])
+    ));
+    const unitPricePln = pricePln + optSurcharge;
+    const unitPriceEur = unitPricePln / eurRate;
+    lines.push(`${idx+1}. ${material} — ${size} — ${finish === 'glossy' ? 'Glossy' : 'Matt'} — ${qty} pcs`);
+    lines.push(`   Print: ${notes}`);
+    if (optLabels.length) lines.push(`   Options: ${optLabels.join(', ')}`);
+    lines.push(`   Target price: ${unitPriceEur.toFixed(4)} EUR/pc (approx. ${unitPricePln.toFixed(2)} PLN)`);
+    lines.push('');
+  });
+  lines.push('Delivery: EXW / DDP');
+  lines.push('Payment: wire transfer 14 days');
+  lines.push('Currency: EUR');
+  lines.push(''); lines.push('Best regards,'); lines.push('PackPack.pl');
+  document.getElementById('quoteOutput').value = lines.join('\n');
+  showStatus('fullprint','QUOTE EN + EUR wygenerowane.','ok');
+}
+
 function copyQuote() { const ta = document.getElementById('quoteOutput'); ta.select(); document.execCommand('copy'); showStatus('fullprint','Skopiowano.','ok'); }
 function calcTeresa() { const text = document.getElementById('teresaInput').value; if (!text.trim()) { showStatus('fullprint','Wklej odpowiedź.','err'); return; } const usdRate = parseFloat(document.getElementById('rateUsd').value) || 4.05; let unitUsd = 0; const patterns = [/USD\s*[\$]?\s*(\d+[.,]?\d*)\s*\/?\s*(pc|piece|szt|unit|per)/i, /(pc|piece|szt|unit)\s*[=:]\s*\$?\s*(\d+[.,]?\d*)/i, /price\s*(per)?\s*[:=]?\s*\$?\s*(\d+[.,]?\d*)/i, /\$\s*(\d+[.,]?\d*)\s*(USD)?/i, /(\d+[.,]?\d*)\s*USD\s*\/?\s*(pc|piece|szt|unit)/i, /cost\s*[:=]?\s*\$?\s*(\d+[.,]?\d*)/i]; for (const re of patterns) { const m = text.match(re); if (m) { const val = parseFloat(m[m.length-1].replace(',','.')); if (!isNaN(val) && val > 0) { unitUsd = val; break; } } } let shipUsd = 0; const sm = text.match(/(shipping|freight|delivery|transport)\s*[:=]?\s*\$?\s*(\d+[.,]?\d*)/i); if (sm) shipUsd = parseFloat(sm[2].replace(',','.')) || 0; let qty = 0; const qm = text.match(/(\d+)\s*(pcs|pieces|szt|units|qty)/i); if (qm) qty = parseInt(qm[1], 10) || 0; if (!qty) { const cards = document.querySelectorAll('#fullprintItems .item-card'); cards.forEach(c => qty += parseInt(c.querySelector('.fp-qty').value,10) || 0); } if (!qty) qty = 1; const unitPln = unitUsd * usdRate; const shipPerUnit = qty > 0 ? (shipUsd * usdRate) / qty : 0; const marginPln = getFullprintMargin(qty); const finalUnit = unitPln + shipPerUnit + marginPln; const totalPln = finalUnit * qty; let html = '<table class="result-table"><tbody>' + `<tr><td>Cena zakupu / szt (USD)</td><td>${unitUsd.toFixed(4)} USD</td></tr>` + `<tr><td>Kurs USD/PLN</td><td>${usdRate.toFixed(2)}</td></tr>` + `<tr><td>Cena zakupu / szt (PLN)</td><td>${unitPln.toFixed(2)} PLN</td></tr>` + `<tr><td>Dostawa / szt (PLN)</td><td>${shipPerUnit.toFixed(2)} PLN</td></tr>` + `<tr><td>Marża / szt (PLN)</td><td>${marginPln.toFixed(2)} PLN</td></tr>` + `<tr><td><strong>Cena finalna / szt</strong></td><td><strong>${finalUnit.toFixed(2)} PLN</strong></td></tr>` + `<tr><td><strong>Wartość całkowita</strong></td><td><strong>${totalPln.toFixed(2)} PLN</strong></td></tr>` + '</tbody></table>'; if (unitUsd === 0) html = '<div class="status err">Nie wykryto ceny USD.</div>' + html; document.getElementById('teresaResults').innerHTML = html; }
 
