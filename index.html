@@ -206,6 +206,36 @@
   .hidden { display: none !important; }
   .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
 
+  /* Landing page */
+  #pageLanding {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 80vh;
+    padding: 20px;
+  }
+  .landing-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 40px 32px;
+    max-width: 420px;
+    width: 100%;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  }
+  #pageLanding .logo-text {
+    font-size: 2.5rem !important;
+    text-align: center;
+  }
+  #pageLanding input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 0.95rem;
+    box-sizing: border-box;
+  }
+
   /* Quote box */
   .quote-box { background: #fafafa; border: 1px dashed var(--border); padding: 10px; border-radius: var(--radius); font-family: monospace; white-space: pre-wrap; font-size: 0.85rem; }
 
@@ -328,6 +358,30 @@
       <button id="showQuotesBtn" class="btn-secondary btn-small" onclick="openSidebar()" style="display:inline-flex;white-space:nowrap;">◀ Moje wyceny</button>
     </div>
     <div id="authStatus" style="margin-bottom:10px;"></div>
+
+    <!-- PAGE: Landing (przed zalogowaniem) -->
+    <div id="pageLanding">
+      <div class="landing-card">
+        <div class="logo-text" style="font-size:2.5rem;text-align:center;margin-bottom:8px;">pack<br>pack</div>
+        <p style="text-align:center;color:#666;font-size:1rem;margin-bottom:24px;">Kalkulator wycen opakowań</p>
+        <p style="text-align:center;color:#666;font-size:0.9rem;line-height:1.6;margin-bottom:24px;">
+          Narzędzie do szybkich wycen zadruku i fullprint.<br>
+          Zarządzaj wycenami, generuj PDF, śledź statusy.
+        </p>
+        <div style="border-top:1px solid var(--border);padding-top:24px;">
+          <h3 style="text-align:center;font-size:1rem;margin-bottom:16px;">Zaloguj się</h3>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <input type="email" id="landingEmail" placeholder="Email" style="width:100%;">
+            <input type="password" id="landingPassword" placeholder="Hasło" style="width:100%;">
+            <div style="display:flex;gap:8px;justify-content:center;">
+              <button class="btn-primary" onclick="landingSignIn()" style="flex:1;">Zaloguj</button>
+              <button class="btn-secondary" onclick="landingSignUp()" style="flex:1;">Rejestracja</button>
+            </div>
+          </div>
+          <div id="landingAuthStatus" style="margin-top:10px;"></div>
+        </div>
+      </div>
+    </div>
 
     <!-- PAGE: Calculator -->
     <div id="pageCalculator">
@@ -617,6 +671,7 @@ function setMode(m) {
 }
 
 function showPage(page) {
+  document.getElementById('pageLanding').classList.toggle('hidden', page !== 'landing');
   document.getElementById('pageCalculator').classList.toggle('hidden', page !== 'calculator');
   document.getElementById('pageFeedback').classList.toggle('hidden', page !== 'feedback');
 }
@@ -737,12 +792,14 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 let supabaseClient = null; let currentUser = null;
 function initSupabase() { if (typeof window.supabase === 'undefined') { setTimeout(initSupabase, 500); return; } supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); initAuth(); }
 async function initAuth() { try { const { data: { session } } = await supabaseClient.auth.getSession(); if (session?.user) { currentUser = session.user; showLoggedIn(session.user.email); } else { showLoggedOut(); } } catch (e) { showLoggedOut(); } supabaseClient.auth.onAuthStateChange((event, session) => { if (session?.user) { currentUser = session.user; showLoggedIn(session.user.email); } else { currentUser = null; showLoggedOut(); } }); }
-function showLoggedIn(email) { document.getElementById('authLoggedOut').style.display = 'none'; document.getElementById('authLoggedIn').style.display = 'block'; document.getElementById('authUserName').textContent = email; openSidebar(); loadQuotes(); }
-function showLoggedOut() { document.getElementById('authLoggedOut').style.display = 'block'; document.getElementById('authLoggedIn').style.display = 'none'; document.getElementById('showQuotesBtn').style.display = 'inline-flex'; closeSidebar(); }
+function showLoggedIn(email) { document.getElementById('authLoggedOut').style.display = 'none'; document.getElementById('authLoggedIn').style.display = 'block'; document.getElementById('authUserName').textContent = email; showPage('calculator'); openSidebar(); loadQuotes(); }
+function showLoggedOut() { document.getElementById('authLoggedOut').style.display = 'block'; document.getElementById('authLoggedIn').style.display = 'none'; document.getElementById('showQuotesBtn').style.display = 'inline-flex'; closeSidebar(); showPage('landing'); }
 async function signIn() { const email = document.getElementById('authEmail').value.trim(); const password = document.getElementById('authPassword').value; const statusEl = document.getElementById('authStatus'); if (!email || !password) { statusEl.innerHTML = '<span class="status err">Wypełnij email i hasło.</span>'; return; } try { const { error } = await supabaseClient.auth.signInWithPassword({ email, password }); if (error) statusEl.innerHTML = '<span class="status err">' + error.message + '</span>'; else statusEl.innerHTML = '<span class="status ok">Zalogowano!</span>'; } catch (e) { statusEl.innerHTML = '<span class="status err">Błąd: ' + e.message + '</span>'; } }
 async function signUp() { const email = document.getElementById('authEmail').value.trim(); const password = document.getElementById('authPassword').value; const statusEl = document.getElementById('authStatus'); if (!email || !password) { statusEl.innerHTML = '<span class="status err">Wypełnij email i hasło.</span>'; return; } if (password.length < 6) { statusEl.innerHTML = '<span class="status err">Hasło min. 6 znaków.</span>'; return; } try { const { error } = await supabaseClient.auth.signUp({ email, password }); if (error) statusEl.innerHTML = '<span class="status err">' + error.message + '</span>'; else statusEl.innerHTML = '<span class="status ok">Konto utworzone! Sprawdź email.</span>'; } catch (e) { statusEl.innerHTML = '<span class="status err">Błąd: ' + e.message + '</span>'; } }
 async function signOut() { try { await supabaseClient.auth.signOut(); } catch (e) {} document.getElementById('authStatus').innerHTML = ''; }
 
+async function landingSignIn() { const email = document.getElementById('landingEmail').value.trim(); const password = document.getElementById('landingPassword').value; const statusEl = document.getElementById('landingAuthStatus'); if (!email || !password) { statusEl.innerHTML = '<span class="status err">Wypełnij email i hasło.</span>'; return; } try { const { error } = await supabaseClient.auth.signInWithPassword({ email, password }); if (error) statusEl.innerHTML = '<span class="status err">' + error.message + '</span>'; else statusEl.innerHTML = '<span class="status ok">Zalogowano!</span>'; } catch (e) { statusEl.innerHTML = '<span class="status err">Błąd: ' + e.message + '</span>'; } }
+async function landingSignUp() { const email = document.getElementById('landingEmail').value.trim(); const password = document.getElementById('landingPassword').value; const statusEl = document.getElementById('landingAuthStatus'); if (!email || !password) { statusEl.innerHTML = '<span class="status err">Wypełnij email i hasło.</span>'; return; } if (password.length < 6) { statusEl.innerHTML = '<span class="status err">Hasło min. 6 znaków.</span>'; return; } try { const { error } = await supabaseClient.auth.signUp({ email, password }); if (error) statusEl.innerHTML = '<span class="status err">' + error.message + '</span>'; else statusEl.innerHTML = '<span class="status ok">Konto utworzone! Sprawdź email.</span>'; } catch (e) { statusEl.innerHTML = '<span class="status err">Błąd: ' + e.message + '</span>'; } }
 async function saveQuote() {
   if (!currentUser) { alert('Zaloguj się, aby zapisać wycenę.'); return; }
   const type = mode; let items = []; let total = 0;
