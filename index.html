@@ -476,6 +476,12 @@
           <button class="btn-secondary btn-small" onclick="copyQuote()">Kopiuj</button>
         </div>
 
+        <div style="margin-top:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <input type="tel" id="contractorPhone" placeholder="Tel. kontrahenta" style="width:140px;padding:6px 10px;border:1px solid var(--border);border-radius:var(--radius);font-size:0.85rem;">
+          <button class="btn-secondary btn-small" onclick="sendWhatsApp('contractor')">📱 WhatsApp do kontrahenta</button>
+          <button class="btn-secondary btn-small" onclick="sendWhatsApp('client')">📱 WhatsApp do klienta</button>
+        </div>
+
         <h3 style="font-size:0.95rem;margin-top:14px;">Odpowiedź od Teresy</h3>
         <textarea id="teresaInput" placeholder="Wklej odpowiedź (z ceną USD)..." style="min-height:100px"></textarea>
         <div class="actions">
@@ -1027,6 +1033,46 @@ async function generateQuoteEnEur() {
 }
 
 function copyQuote() { const ta = document.getElementById('quoteOutput'); ta.select(); document.execCommand('copy'); showStatus('fullprint','Skopiowano.','ok'); }
+
+function sendWhatsApp(target) {
+  let phone = '';
+  let text = '';
+  if (target === 'contractor') {
+    phone = document.getElementById('contractorPhone').value.trim().replace(/\s/g, '').replace(/[^0-9+]/g, '');
+    if (!phone) { alert('Podaj numer telefonu kontrahenta.'); return; }
+    text = document.getElementById('quoteOutput').value;
+    if (!text.trim()) { alert('Najpierw wygeneruj QUOTE.'); return; }
+  } else {
+    phone = document.getElementById('clientPhone').value.trim().replace(/\s/g, '').replace(/[^0-9+]/g, '');
+    if (!phone) { alert('Podaj numer telefonu klienta w sekcji "Dane klienta".'); return; }
+    const cards = document.querySelectorAll('#fullprintItems .item-card');
+    if (!cards.length) { alert('Dodaj pozycje fullprint.'); return; }
+    const eurRate = parseFloat(document.getElementById('rateEur').value) || 4.35;
+    let lines = ['PackPack.pl — Preliminary Quote'];
+    let totalEur = 0;
+    cards.forEach((card, idx) => {
+      const material = card.querySelector('.fp-material').value;
+      const size = card.querySelector('.fp-size').value;
+      const finish = card.querySelector('.fp-finish').value;
+      const qty = parseInt(card.querySelector('.fp-qty').value, 10) || 0;
+      const pricePln = getFullprintPrice(material, size, qty);
+      const options = {};
+      card.querySelectorAll('.fp-opt:checked').forEach(cb => { options[cb.dataset.opt] = true; });
+      const surcharge = getFullprintOptionsSurcharge(options);
+      const margin = getFullprintMargin(material, qty);
+      const unitPrice = (pricePln + margin + surcharge) / eurRate;
+      const lineTotal = unitPrice * qty;
+      totalEur += lineTotal;
+      lines.push(`${idx+1}. ${material} ${size} ${qty}pcs @ ${unitPrice.toFixed(4)}EUR = ${lineTotal.toFixed(2)}EUR`);
+    });
+    lines.push(`Total: ${totalEur.toFixed(2)} EUR net`);
+    lines.push('Terms: net ex VAT, EXW/DDP, wire transfer, EUR, 7 days validity');
+    text = lines.join('\n');
+  }
+  const url = 'https://wa.me/' + phone + '?text=' + encodeURIComponent(text);
+  window.open(url, '_blank');
+}
+
 function calcTeresa() { const text = document.getElementById('teresaInput').value; if (!text.trim()) { showStatus('fullprint','Wklej odpowiedź.','err'); return; } const usdRate = parseFloat(document.getElementById('rateUsd').value) || 4.05; let unitUsd = 0; const patterns = [/USD\s*[\$]?\s*(\d+[.,]?\d*)\s*\/?\s*(pc|piece|szt|unit|per)/i, /(pc|piece|szt|unit)\s*[=:]\s*\$?\s*(\d+[.,]?\d*)/i, /price\s*(per)?\s*[:=]?\s*\$?\s*(\d+[.,]?\d*)/i, /\$\s*(\d+[.,]?\d*)\s*(USD)?/i, /(\d+[.,]?\d*)\s*USD\s*\/?\s*(pc|piece|szt|unit)/i, /cost\s*[:=]?\s*\$?\s*(\d+[.,]?\d*)/i]; for (const re of patterns) { const m = text.match(re); if (m) { const val = parseFloat(m[m.length-1].replace(',','.')); if (!isNaN(val) && val > 0) { unitUsd = val; break; } } } let shipUsd = 0; const sm = text.match(/(shipping|freight|delivery|transport)\s*[:=]?\s*\$?\s*(\d+[.,]?\d*)/i); if (sm) shipUsd = parseFloat(sm[2].replace(',','.')) || 0; let qty = 0; const qm = text.match(/(\d+)\s*(pcs|pieces|szt|units|qty)/i); if (qm) qty = parseInt(qm[1], 10) || 0; if (!qty) { const cards = document.querySelectorAll('#fullprintItems .item-card'); cards.forEach(c => qty += parseInt(c.querySelector('.fp-qty').value,10) || 0); } if (!qty) qty = 1; const unitPln = unitUsd * usdRate; const shipPerUnit = qty > 0 ? (shipUsd * usdRate) / qty : 0; const marginPln = getFullprintMargin(qty); const finalUnit = unitPln + shipPerUnit + marginPln; const totalPln = finalUnit * qty; let html = '<table class="result-table"><tbody>' + `<tr><td>Cena zakupu / szt (USD)</td><td>${unitUsd.toFixed(4)} USD</td></tr>` + `<tr><td>Kurs USD/PLN</td><td>${usdRate.toFixed(2)}</td></tr>` + `<tr><td>Cena zakupu / szt (PLN)</td><td>${unitPln.toFixed(2)} PLN</td></tr>` + `<tr><td>Dostawa / szt (PLN)</td><td>${shipPerUnit.toFixed(2)} PLN</td></tr>` + `<tr><td>Marża / szt (PLN)</td><td>${marginPln.toFixed(2)} PLN</td></tr>` + `<tr><td><strong>Cena finalna / szt</strong></td><td><strong>${finalUnit.toFixed(2)} PLN</strong></td></tr>` + `<tr><td><strong>Wartość całkowita</strong></td><td><strong>${totalPln.toFixed(2)} PLN</strong></td></tr>` + '</tbody></table>'; if (unitUsd === 0) html = '<div class="status err">Nie wykryto ceny USD.</div>' + html; document.getElementById('teresaResults').innerHTML = html; }
 
 /* ==================== PARSOWANIE MAILA ==================== */
