@@ -744,11 +744,11 @@ async function saveQuote() {
   if (type === 'overprint') {
     const cards = document.querySelectorAll('#overprintItems .item-card');
     cards.forEach(card => { items.push({ product: card.querySelector('.op-product').value, size: card.querySelector('.op-size').value, price: parseFloat(card.querySelector('.op-price').value) || 0, print: card.querySelector('.op-print').value, sides: card.querySelector('.op-sides').value, qty: parseInt(card.querySelector('.op-qty').value, 10) || 0 }); });
-    const summary = document.querySelector('#overprintResults .summary'); if (summary) total = parseFloat(summary.textContent.replace(/[^\d,]/g, '').replace(',', '.')) || 0;
+    const summary = document.querySelector('#overprintResults .summary'); if (summary) total = parseFloat(summary.textContent.replace(/[^\d,.]/g, '').replace(',', '.')) || 0;
   } else {
     const cards = document.querySelectorAll('#fullprintItems .item-card');
     cards.forEach(card => { items.push({ material: card.querySelector('.fp-material').value, size: card.querySelector('.fp-size').value, price: parseFloat(card.querySelector('.fp-price').value) || 0, qty: parseInt(card.querySelector('.fp-qty').value, 10) || 0 }); });
-    const summary = document.querySelector('#fullprintResults .summary'); if (summary) total = parseFloat(summary.textContent.replace(/[^\d,]/g, '').replace(',', '.')) || 0;
+    const summary = document.querySelector('#fullprintResults .summary'); if (summary) total = parseFloat(summary.textContent.replace(/[^\d,.]/g, '').replace(',', '.')) || 0;
   }
   const refNum = 'PP-' + new Date().toISOString().slice(0,10).replace(/-/g, '') + '-' + Math.floor(Math.random() * 900 + 100);
   try { const { error } = await supabaseClient.from('pp_quotes').insert([{ reference_number: refNum, user_id: currentUser.id, type: type, items: items, total_netto: total, currency: 'PLN', status: 'draft' }]).select(); if (error) alert('Błąd zapisu: ' + error.message); else { alert('Wycena zapisana! Nr: ' + refNum); loadQuotes(); } } catch (e) { alert('Błąd: ' + e.message); }
