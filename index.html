@@ -839,7 +839,7 @@ function addFullprintItem(data) {
   container.appendChild(div); if (data && data.material) div.querySelector('.fp-material').value = data.material; if (data && data.size) div.querySelector('.fp-size').value = data.size; updateFpPrice(id);
 }
 function updateFpMaterial(id) { const card = document.querySelector(`#fp-item-${id}`); if (!card) return; const mat = card.querySelector('.fp-material').value; const sizeSelect = card.querySelector('.fp-size'); const sizes = fullprintSizesPerMaterial[mat] || []; sizeSelect.innerHTML = sizes.map(s => `<option value="${s}">${s}</option>`).join(''); updateFpPrice(id); }
-function updateFpPrice(id) { const card = document.querySelector(`#fp-item-${id}`); if (!card) return; const mat = card.querySelector('.fp-material').value; const size = card.querySelector('.fp-size').value; const input = card.querySelector('.fp-price'); const price = getFullprintPrice(mat, size, 0); if (price > 0) { input.placeholder = price.toFixed(2); if (!input.value) input.value = price.toFixed(2); } }
+function updateFpPrice(id) { const card = document.querySelector(`#fp-item-${id}`); if (!card) return; const mat = card.querySelector('.fp-material').value; const size = card.querySelector('.fp-size').value; const input = card.querySelector('.fp-price'); const qty = parseInt(card.querySelector('.fp-qty').value, 10) || 0; const price = getFullprintPrice(mat, size, qty); if (price > 0) { input.placeholder = price.toFixed(2); } }
 function removeItem(elId) { const el = document.getElementById(elId); if (el) el.remove(); }
 
 /* ==================== KALKULACJE ==================== */
