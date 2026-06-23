@@ -412,6 +412,28 @@
         <div id="mailStatus" class="status hidden"></div>
       </div>
 
+      <div class="card" id="clientDataSection" style="display:none;">
+        <h2 style="margin-top:0;font-size:1rem;">Dane klienta (opcjonalne)</h2>
+        <div class="row" style="gap:10px;flex-wrap:wrap;">
+          <div class="field" style="flex:1;min-width:150px;">
+            <label>Imię i nazwisko</label>
+            <input type="text" id="clientName" placeholder="Jan Kowalski">
+          </div>
+          <div class="field" style="flex:1;min-width:150px;">
+            <label>Firma</label>
+            <input type="text" id="clientCompany" placeholder="Firma Sp. z o.o.">
+          </div>
+          <div class="field" style="flex:1;min-width:150px;">
+            <label>Email</label>
+            <input type="email" id="clientEmail" placeholder="jan@firma.pl">
+          </div>
+          <div class="field" style="flex:1;min-width:150px;">
+            <label>Telefon</label>
+            <input type="tel" id="clientPhone" placeholder="+48 123 456 789">
+          </div>
+        </div>
+      </div>
+
       <div id="overprintSection" class="card mode-section">
         <h2 style="margin-top:0;font-size:1rem;">Overprint (zadruk)</h2>
         <div id="overprintItems"></div>
@@ -792,8 +814,8 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 let supabaseClient = null; let currentUser = null;
 function initSupabase() { if (typeof window.supabase === 'undefined') { setTimeout(initSupabase, 500); return; } supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); initAuth(); }
 async function initAuth() { try { const { data: { session } } = await supabaseClient.auth.getSession(); if (session?.user) { currentUser = session.user; showLoggedIn(session.user.email); } else { showLoggedOut(); } } catch (e) { showLoggedOut(); } supabaseClient.auth.onAuthStateChange((event, session) => { if (session?.user) { currentUser = session.user; showLoggedIn(session.user.email); } else { currentUser = null; showLoggedOut(); } }); }
-function showLoggedIn(email) { document.getElementById('authLoggedOut').style.display = 'none'; document.getElementById('authLoggedIn').style.display = 'block'; document.getElementById('authUserName').textContent = email; showPage('calculator'); openSidebar(); loadQuotes(); }
-function showLoggedOut() { document.getElementById('authLoggedOut').style.display = 'block'; document.getElementById('authLoggedIn').style.display = 'none'; document.getElementById('showQuotesBtn').style.display = 'inline-flex'; closeSidebar(); showPage('landing'); }
+function showLoggedIn(email) { document.getElementById('authLoggedOut').style.display = 'none'; document.getElementById('authLoggedIn').style.display = 'block'; document.getElementById('authUserName').textContent = email; const clientSection = document.getElementById('clientDataSection'); if (clientSection) clientSection.style.display = 'block'; showPage('calculator'); openSidebar(); loadQuotes(); }
+function showLoggedOut() { document.getElementById('authLoggedOut').style.display = 'block'; document.getElementById('authLoggedIn').style.display = 'none'; document.getElementById('showQuotesBtn').style.display = 'inline-flex'; const clientSection = document.getElementById('clientDataSection'); if (clientSection) clientSection.style.display = 'none'; closeSidebar(); showPage('landing'); }
 async function signIn() { const email = document.getElementById('authEmail').value.trim(); const password = document.getElementById('authPassword').value; const statusEl = document.getElementById('authStatus'); if (!email || !password) { statusEl.innerHTML = '<span class="status err">Wypełnij email i hasło.</span>'; return; } try { const { error } = await supabaseClient.auth.signInWithPassword({ email, password }); if (error) statusEl.innerHTML = '<span class="status err">' + error.message + '</span>'; else statusEl.innerHTML = '<span class="status ok">Zalogowano!</span>'; } catch (e) { statusEl.innerHTML = '<span class="status err">Błąd: ' + e.message + '</span>'; } }
 async function signUp() { const email = document.getElementById('authEmail').value.trim(); const password = document.getElementById('authPassword').value; const statusEl = document.getElementById('authStatus'); if (!email || !password) { statusEl.innerHTML = '<span class="status err">Wypełnij email i hasło.</span>'; return; } if (password.length < 6) { statusEl.innerHTML = '<span class="status err">Hasło min. 6 znaków.</span>'; return; } try { const { error } = await supabaseClient.auth.signUp({ email, password }); if (error) statusEl.innerHTML = '<span class="status err">' + error.message + '</span>'; else statusEl.innerHTML = '<span class="status ok">Konto utworzone! Sprawdź email.</span>'; } catch (e) { statusEl.innerHTML = '<span class="status err">Błąd: ' + e.message + '</span>'; } }
 async function signOut() { try { await supabaseClient.auth.signOut(); } catch (e) {} document.getElementById('authStatus').innerHTML = ''; }
@@ -813,7 +835,13 @@ async function saveQuote() {
     const summary = document.querySelector('#fullprintResults .summary'); if (summary) total = parseFloat(summary.textContent.replace(/[^\d,.]/g, '').replace(',', '.')) || 0;
   }
   const refNum = 'PP-' + new Date().toISOString().slice(0,10).replace(/-/g, '') + '-' + Math.floor(Math.random() * 900 + 100);
-  try { const { error } = await supabaseClient.from('pp_quotes').insert([{ reference_number: refNum, user_id: currentUser.id, type: type, items: items, total_netto: total, currency: 'PLN', status: 'draft' }]).select(); if (error) alert('Błąd zapisu: ' + error.message); else { alert('Wycena zapisana! Nr: ' + refNum); loadQuotes(); } } catch (e) { alert('Błąd: ' + e.message); }
+  const clientData = {
+    client_name: document.getElementById('clientName').value.trim() || null,
+    client_company: document.getElementById('clientCompany').value.trim() || null,
+    client_email: document.getElementById('clientEmail').value.trim() || null,
+    client_phone: document.getElementById('clientPhone').value.trim() || null
+  };
+  try { const { error } = await supabaseClient.from('pp_quotes').insert([{ reference_number: refNum, user_id: currentUser.id, type: type, items: items, total_netto: total, currency: 'PLN', status: 'draft', ...clientData }]).select(); if (error) alert('Błąd zapisu: ' + error.message); else { alert('Wycena zapisana! Nr: ' + refNum); loadQuotes(); } } catch (e) { alert('Błąd: ' + e.message); }
 }
 
 async function loadQuotes() {
@@ -834,9 +862,12 @@ async function loadQuotes() {
     filtered.forEach(q => {
       const statusLabel = statusLabels[q.status] || q.status;
       const badge = badgeClass[q.status] || 'badge-draft';
+      const clientName = q.client_name || (q.client_company || '');
+      const clientLine = clientName ? `<div class="meta" style="color:#333;font-weight:600;">${clientName}</div>` : '';
       html += `<div class="quote-list-item" onclick="showQuoteDetail('${q.id}')">
         <div class="ref">${q.reference_number}</div>
         <div class="meta">${q.type === 'overprint' ? 'Overprint' : 'Fullprint'} · ${new Date(q.created_at).toLocaleDateString('pl-PL')}</div>
+        ${clientLine}
         <div class="value">${q.total_netto.toFixed(2)} ${q.currency} <span class="quote-badge ${badge}">${statusLabel}</span></div>
       </div>`;
     });
@@ -890,6 +921,17 @@ async function showQuoteDetail(id) {
           <label>Data utworzenia</label>
           <div class="value">${new Date(data.created_at).toLocaleString('pl-PL')}</div>
         </div>
+        ${data.client_name || data.client_company || data.client_email || data.client_phone ? `
+        <div class="modal-section">
+          <label>Klient</label>
+          <div class="value" style="font-size:0.9rem;line-height:1.6;">
+            ${data.client_name ? `<div>👤 ${data.client_name}</div>` : ''}
+            ${data.client_company ? `<div>🏢 ${data.client_company}</div>` : ''}
+            ${data.client_email ? `<div>📧 ${data.client_email}</div>` : ''}
+            ${data.client_phone ? `<div>📞 ${data.client_phone}</div>` : ''}
+          </div>
+        </div>
+        ` : ''}
         ${reminderHtml}
         <div class="modal-section">
           <label>Pozycje</label>
@@ -939,6 +981,15 @@ async function printQuotePdf(quoteId) {
     const now = new Date(data.created_at).toLocaleString('pl-PL');
     const typeLabel = data.type === 'overprint' ? 'Wycena Overprint' : 'Wycena Fullprint';
     const logoSvg = `<svg width="120" height="70" viewBox="0 0 120 70" xmlns="http://www.w3.org/2000/svg"><style>.p{font-family:Arial,sans-serif;font-weight:800;font-size:28px;letter-spacing:-0.5px;}</style><text x="0" y="30" class="p" fill="#1a1a1a">pack</text><text x="0" y="62" class="p" fill="#1a1a1a">pack</text></svg>`;
+    let clientInfo = '';
+    if (data.client_name || data.client_company || data.client_email || data.client_phone) {
+      clientInfo = '<div style="margin:16px 0;padding:12px;background:#fafafa;border-radius:6px;font-size:10pt;"><strong>Klient:</strong><br>';
+      if (data.client_name) clientInfo += `👤 ${data.client_name}<br>`;
+      if (data.client_company) clientInfo += `🏢 ${data.client_company}<br>`;
+      if (data.client_email) clientInfo += `📧 ${data.client_email}<br>`;
+      if (data.client_phone) clientInfo += `📞 ${data.client_phone}<br>`;
+      clientInfo += '</div>';
+    }
     let rowsHtml = '';
     if (data.items && data.items.length) {
       data.items.forEach(it => {
@@ -946,7 +997,7 @@ async function printQuotePdf(quoteId) {
         rowsHtml += `<tr><td>${name}</td><td>${it.size || ''}</td><td>${it.qty || 0}</td><td>${(it.price || 0).toFixed(2)}</td></tr>`;
       });
     }
-    const html = `<!DOCTYPE html><html lang="pl"><head><meta charset="UTF-8"><title>${typeLabel} — ${data.reference_number}</title><style>@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');body{font-family:'Inter',Arial,sans-serif;margin:0;padding:24px 32px;color:#1a1a1a;background:#fff;}.header{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #F26522;padding-bottom:16px;margin-bottom:20px;}.title-block{text-align:right;}.title-block h1{margin:0;font-size:18px;font-weight:700;}.ref{font-size:10pt;color:#666;}table{width:100%;border-collapse:collapse;font-size:9.5pt;margin-top:12px;}th,td{border:1px solid #ddd;padding:7px 9px;text-align:left;}th{background:#fafafa;font-weight:600;font-size:9pt;color:#333;}tr:nth-child(even){background:#f9f9f9;}.summary{font-weight:700;font-size:13pt;margin-top:14px;color:#F26522;text-align:right;}.footer{margin-top:40px;border-top:1px solid #eee;padding-top:12px;font-size:8pt;color:#666;display:flex;justify-content:space-between;}</style></head><body><div class="header">${logoSvg}<div class="title-block"><h1>${typeLabel}</h1><p class="ref">${data.reference_number}</p><p>Data: ${now}</p></div></div><table><thead><tr><th>Produkt/Materiał</th><th>Rozmiar</th><th>Ilość</th><th>Cena</th></tr></thead><tbody>${rowsHtml}</tbody></table><div class="summary">Suma netto: ${data.total_netto.toFixed(2)} ${data.currency}</div><div class="footer"><div><strong>Pack Pack Sp. z o.o.</strong><br>NIP: 7272845933 | KRS: 0000867114</div><div style="text-align:right">666 038 495 | 666 374 391<br>kontakt@packpack.pl | www.packpack.pl</div></div></body></html>`;
+    const html = `<!DOCTYPE html><html lang="pl"><head><meta charset="UTF-8"><title>${typeLabel} — ${data.reference_number}</title><style>@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');body{font-family:'Inter',Arial,sans-serif;margin:0;padding:24px 32px;color:#1a1a1a;background:#fff;}.header{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #F26522;padding-bottom:16px;margin-bottom:20px;}.title-block{text-align:right;}.title-block h1{margin:0;font-size:18px;font-weight:700;}.ref{font-size:10pt;color:#666;}table{width:100%;border-collapse:collapse;font-size:9.5pt;margin-top:12px;}th,td{border:1px solid #ddd;padding:7px 9px;text-align:left;}th{background:#fafafa;font-weight:600;font-size:9pt;color:#333;}tr:nth-child(even){background:#f9f9f9;}.summary{font-weight:700;font-size:13pt;margin-top:14px;color:#F26522;text-align:right;}.footer{margin-top:40px;border-top:1px solid #eee;padding-top:12px;font-size:8pt;color:#666;display:flex;justify-content:space-between;}</style></head><body><div class="header">${logoSvg}<div class="title-block"><h1>${typeLabel}</h1><p class="ref">${data.reference_number}</p><p>Data: ${now}</p></div></div>${clientInfo}<table><thead><tr><th>Produkt/Materiał</th><th>Rozmiar</th><th>Ilość</th><th>Cena</th></tr></thead><tbody>${rowsHtml}</tbody></table><div class="summary">Suma netto: ${data.total_netto.toFixed(2)} ${data.currency}</div><div class="footer"><div><strong>Pack Pack Sp. z o.o.</strong><br>NIP: 7272845933 | KRS: 0000867114</div><div style="text-align:right">666 038 495 | 666 374 391<br>kontakt@packpack.pl | www.packpack.pl</div></div></body></html>`;
     const iframe = document.createElement('iframe'); iframe.style.position='fixed'; iframe.style.top='-9999px'; iframe.style.left='-9999px'; iframe.style.width='1px'; iframe.style.height='1px'; document.body.appendChild(iframe); iframe.contentWindow.document.open(); iframe.contentWindow.document.write(html); iframe.contentWindow.document.close(); setTimeout(() => { iframe.contentWindow.focus(); iframe.contentWindow.print(); setTimeout(() => { if (iframe.parentNode) iframe.parentNode.removeChild(iframe); }, 2000); }, 500);
   } catch (e) { console.error('printQuotePdf error:', e); }
 }
