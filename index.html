@@ -708,17 +708,17 @@ const fullprintPrices = {
   }
 };
 const fullprintOptions = [
-  { id: 'round_corners', label: 'Zaokrąglone rogi', surcharge: 0 },
-  { id: 'zip_lock', label: 'Struna (zip lock)', surcharge: 0 },
-  { id: 'tear_notch', label: 'Nacinnik (tear notch)', surcharge: 0 },
-  { id: 'metallized', label: 'Metaliza', surcharge: 0 },
-  { id: 'holographic', label: 'Holografic effect', surcharge: 0 },
-  { id: 'soft_touch', label: 'Soft touch', surcharge: 0 },
-  { id: 'coffee_valve', label: 'Wentyl do kawy', surcharge: 0.40 },
-  { id: 'hot_foil', label: 'Hot foil', surcharge: 0 },
-  { id: 'euro_hanger', label: 'Eurozawieszka', surcharge: 0 },
-  { id: 'euro_hole', label: 'Eurodziurka', surcharge: 0 },
-  { id: 'open_zip', label: 'Otwarta struna', surcharge: 0 }
+  { id: 'round_corners', label: 'Zaokrąglone rogi', labelEn: 'Rounded corners', surcharge: 0 },
+  { id: 'zip_lock', label: 'Struna (zip lock)', labelEn: 'Zip lock', surcharge: 0 },
+  { id: 'tear_notch', label: 'Nacinnik (tear notch)', labelEn: 'Tear notch', surcharge: 0 },
+  { id: 'metallized', label: 'Metaliza', labelEn: 'Metallized', surcharge: 0 },
+  { id: 'holographic', label: 'Holografic effect', labelEn: 'Holographic effect', surcharge: 0 },
+  { id: 'soft_touch', label: 'Soft touch', labelEn: 'Soft touch', surcharge: 0 },
+  { id: 'coffee_valve', label: 'Wentyl do kawy', labelEn: 'Coffee valve', surcharge: 0.40 },
+  { id: 'hot_foil', label: 'Hot foil', labelEn: 'Hot foil', surcharge: 0 },
+  { id: 'euro_hanger', label: 'Eurozawieszka', labelEn: 'Euro hanger', surcharge: 0 },
+  { id: 'euro_hole', label: 'Eurodziurka', labelEn: 'Euro hole', surcharge: 0 },
+  { id: 'open_zip', label: 'Otwarta struna', labelEn: 'Open zip', surcharge: 0 }
 ];
 const fullprintMargins = [
   { min: 0, max: 499, val: 1.00 }, { min: 500, max: 999, val: 1.00 },
@@ -978,7 +978,7 @@ async function generateQuoteEnEur() {
     const optLabels = [];
     card.querySelectorAll('.fp-opt:checked').forEach(cb => {
       const optDef = fullprintOptions.find(o => o.id === cb.dataset.opt);
-      if (optDef) optLabels.push(optDef.label);
+      if (optDef) optLabels.push(optDef.labelEn);
     });
     const pricePln = getFullprintPrice(material, size, qty);
     const optSurcharge = getFullprintOptionsSurcharge(Object.fromEntries(
@@ -1068,7 +1068,7 @@ function printResultsEn(pmode) {
     const lineTotal = unitPrice * qty;
     totalEur += lineTotal;
     const optLabels = [];
-    for (const opt of fullprintOptions) { if (options[opt.id]) optLabels.push(opt.label); }
+    for (const opt of fullprintOptions) { if (options[opt.id]) optLabels.push(opt.labelEn); }
     const optText = optLabels.length ? optLabels.join(', ') : '—';
     tableHtml += `<tr><td>${idx+1}</td><td>${material}</td><td>${size}</td><td>${finish==='glossy'?'Glossy':'Matt'}</td><td>${qty}</td><td>${optText}</td><td>${unitPrice.toFixed(4)}</td><td>${lineTotal.toFixed(2)}</td></tr>`;
   });
