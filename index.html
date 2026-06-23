@@ -902,6 +902,14 @@ async function showQuoteDetail(id) {
           <label>Notatki</label>
           <textarea id="modalNotes" rows="2" placeholder="Dodaj notatkę...">${data.notes || ''}</textarea>
         </div>
+        <div class="modal-section">
+          <label>Wysyłka</label>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+            <button class="btn-primary btn-small" onclick="logSent('${data.id}','client')">📧 Do klienta</button>
+            <button class="btn-secondary btn-small" onclick="logSent('${data.id}','contractor')">📧 Do kontrahenta</button>
+          </div>
+          <div id="sentLogList" style="font-size:0.8rem;color:#666;">${formatSentLog(data.sent_log)}</div>
+        </div>
         <div class="modal-actions">
           <button class="btn-primary btn-small" onclick="saveQuoteNotes()">Zapisz notatki</button>
           <button class="btn-secondary btn-small" onclick="printQuotePdf('${data.id}')">📄 PDF</button>
@@ -938,6 +946,31 @@ async function printQuotePdf(quoteId) {
     const html = `<!DOCTYPE html><html lang="pl"><head><meta charset="UTF-8"><title>${typeLabel} — ${data.reference_number}</title><style>@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');body{font-family:'Inter',Arial,sans-serif;margin:0;padding:24px 32px;color:#1a1a1a;background:#fff;}.header{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #F26522;padding-bottom:16px;margin-bottom:20px;}.title-block{text-align:right;}.title-block h1{margin:0;font-size:18px;font-weight:700;}.ref{font-size:10pt;color:#666;}table{width:100%;border-collapse:collapse;font-size:9.5pt;margin-top:12px;}th,td{border:1px solid #ddd;padding:7px 9px;text-align:left;}th{background:#fafafa;font-weight:600;font-size:9pt;color:#333;}tr:nth-child(even){background:#f9f9f9;}.summary{font-weight:700;font-size:13pt;margin-top:14px;color:#F26522;text-align:right;}.footer{margin-top:40px;border-top:1px solid #eee;padding-top:12px;font-size:8pt;color:#666;display:flex;justify-content:space-between;}</style></head><body><div class="header">${logoSvg}<div class="title-block"><h1>${typeLabel}</h1><p class="ref">${data.reference_number}</p><p>Data: ${now}</p></div></div><table><thead><tr><th>Produkt/Materiał</th><th>Rozmiar</th><th>Ilość</th><th>Cena</th></tr></thead><tbody>${rowsHtml}</tbody></table><div class="summary">Suma netto: ${data.total_netto.toFixed(2)} ${data.currency}</div><div class="footer"><div><strong>Pack Pack Sp. z o.o.</strong><br>NIP: 7272845933 | KRS: 0000867114</div><div style="text-align:right">666 038 495 | 666 374 391<br>kontakt@packpack.pl | www.packpack.pl</div></div></body></html>`;
     const iframe = document.createElement('iframe'); iframe.style.position='fixed'; iframe.style.top='-9999px'; iframe.style.left='-9999px'; iframe.style.width='1px'; iframe.style.height='1px'; document.body.appendChild(iframe); iframe.contentWindow.document.open(); iframe.contentWindow.document.write(html); iframe.contentWindow.document.close(); setTimeout(() => { iframe.contentWindow.focus(); iframe.contentWindow.print(); setTimeout(() => { if (iframe.parentNode) iframe.parentNode.removeChild(iframe); }, 2000); }, 500);
   } catch (e) { console.error('printQuotePdf error:', e); }
+}
+
+function formatSentLog(sentLog) {
+  if (!sentLog || !sentLog.length) return 'Brak wysyłek.';
+  return sentLog.map(entry => {
+    const date = new Date(entry.date).toLocaleString('pl-PL');
+    const type = entry.type === 'client' ? 'Klient' : 'Kontrahent';
+    return `• ${date} — ${type}`;
+  }).reverse().join('<br>');
+}
+
+async function logSent(quoteId, type) {
+  if (!supabaseClient || !currentUser) return;
+  try {
+    const { data: existing } = await supabaseClient.from('pp_quotes').select('sent_log').eq('id', quoteId).eq('user_id', currentUser.id).single();
+    const log = existing?.sent_log || [];
+    log.push({ type: type, date: new Date().toISOString() });
+    const { error } = await supabaseClient.from('pp_quotes').update({ sent_log: log, updated_at: new Date().toISOString() }).eq('id', quoteId);
+    if (error) alert('Błąd: ' + error.message);
+    else {
+      const listEl = document.getElementById('sentLogList');
+      if (listEl) listEl.innerHTML = formatSentLog(log);
+      alert('Wysyłka zapisana!');
+    }
+  } catch (e) { console.error('logSent error:', e); }
 }
 
 async function updateQuoteStatus(id, newStatus) {
