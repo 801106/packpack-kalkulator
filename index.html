@@ -1424,8 +1424,6 @@ function switchTab(tab) {
   if (tab === 'quotes' && currentUser) { try { loadQuotes(); } catch(e) { console.error(e); } }
   if (tab === 'feedback' && currentUser) { try { loadFeedback(); } catch(e) { console.error(e); } }
 }
-  if (tab === 'feedback' && currentUser) loadFeedback();
-}
 
 /* ==================== SAVE / LOAD QUOTES ==================== */
 
