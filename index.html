@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>PackPack Kalkulator</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js?v=2"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2.0.0/dist/umd/supabase.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
 
@@ -1315,18 +1315,23 @@ let supabaseClient = null;
 let currentUser = null;
 
 function initSupabase() {
+  console.log('[DEBUG] initSupabase called, window.supabase =', typeof window.supabase);
   if (typeof window.supabase === 'undefined') {
-    console.warn('Supabase library not loaded yet. Retrying in 500ms...');
+    console.warn('[DEBUG] Supabase library not loaded yet. Retrying in 500ms...');
     setTimeout(initSupabase, 500);
     return;
   }
+  console.log('[DEBUG] Creating Supabase client...');
   supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  console.log('[DEBUG] Supabase client created:', !!supabaseClient);
   initAuth();
 }
 
 async function initAuth() {
+  console.log('[DEBUG] initAuth called');
   try {
     const { data: { session } } = await supabaseClient.auth.getSession();
+    console.log('[DEBUG] getSession result:', { hasSession: !!session, user: session?.user?.email });
     if (session?.user) {
       currentUser = session.user;
       showLoggedIn(session.user.email);
@@ -1334,11 +1339,12 @@ async function initAuth() {
       showLoggedOut();
     }
   } catch (e) {
-    console.error('initAuth error:', e);
+    console.error('[DEBUG] initAuth error:', e);
     showLoggedOut();
   }
   
   supabaseClient.auth.onAuthStateChange((event, session) => {
+    console.log('[DEBUG] Auth state changed:', event, !!session);
     if (session?.user) {
       currentUser = session.user;
       showLoggedIn(session.user.email);
