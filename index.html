@@ -944,7 +944,6 @@ function generateQuote() {
 async function generateQuoteEnEur() {
   const cards = document.querySelectorAll('#fullprintItems .item-card');
   if (!cards.length) { showStatus('fullprint','Dodaj pozycje fullprint.','err'); return; }
-  // Fetch EUR rate first
   let eurRate = parseFloat(document.getElementById('rateEur').value) || 4.35;
   try {
     const res = await fetch('https://api.nbp.pl/api/exchangerates/rates/a/eur/?format=json');
@@ -955,9 +954,14 @@ async function generateQuoteEnEur() {
     }
   } catch (e) { console.log('NBP EUR fetch failed, using cached rate'); }
 
+  let totalEur = 0;
   let lines = [];
-  lines.push('Dear Sir/Madam,'); lines.push('');
-  lines.push('Please provide your best quote for the following:'); lines.push('');
+  lines.push('PackPack.pl — Preliminary Quote');
+  lines.push('');
+  lines.push('Dear Client,'); lines.push('');
+  lines.push('Please find below our preliminary offer:'); lines.push('');
+  lines.push('Item | Material | Size | Finish | Qty | Unit price (EUR) | Total (EUR)');
+  lines.push('--- | --- | --- | --- | --- | --- | ---');
   cards.forEach((card, idx) => {
     const material = card.querySelector('.fp-material').value;
     const size = card.querySelector('.fp-size').value;
@@ -976,18 +980,32 @@ async function generateQuoteEnEur() {
     const marginPln = getFullprintMargin(material, qty);
     const unitPricePln = pricePln + marginPln + optSurcharge;
     const unitPriceEur = unitPricePln / eurRate;
-    lines.push(`${idx+1}. ${material} — ${size} — ${finish === 'glossy' ? 'Glossy' : 'Matt'} — ${qty} pcs`);
-    lines.push(`   Print: ${notes}`);
-    if (optLabels.length) lines.push(`   Options: ${optLabels.join(', ')}`);
-    lines.push(`   Target price: ${unitPriceEur.toFixed(4)} EUR/pc (approx. ${unitPricePln.toFixed(2)} PLN)`);
+    const totalLineEur = unitPriceEur * qty;
+    totalEur += totalLineEur;
+    lines.push(`${idx+1} | ${material} | ${size} | ${finish === 'glossy' ? 'Glossy' : 'Matt'} | ${qty} | ${unitPriceEur.toFixed(4)} EUR | ${totalLineEur.toFixed(2)} EUR`);
+    if (optLabels.length) lines.push(`    Options: ${optLabels.join(', ')}`);
+    if (notes) lines.push(`    Print: ${notes}`);
     lines.push('');
   });
-  lines.push('Delivery: EXW / DDP');
-  lines.push('Payment: wire transfer 14 days');
-  lines.push('Currency: EUR');
-  lines.push(''); lines.push('Best regards,'); lines.push('PackPack.pl');
+  lines.push('');
+  lines.push(`**Total net: ${totalEur.toFixed(2)} EUR**`);
+  lines.push('');
+  lines.push('Terms:');
+  lines.push('- Prices are net, excluding VAT');
+  lines.push('- Delivery: EXW / DDP (to be confirmed)');
+  lines.push('- Payment: wire transfer 14 days');
+  lines.push('- Currency: EUR');
+  lines.push('- Validity: 30 days');
+  lines.push('');
+  lines.push('This is a preliminary offer. Final pricing will be confirmed after artwork review and production feasibility check.');
+  lines.push('');
+  lines.push('Best regards,');
+  lines.push('PackPack.pl');
+  lines.push('NIP: 7272845933 | KRS: 0000867114');
+  lines.push('Phone: +48 666 038 495 | +48 666 374 391');
+  lines.push('Email: kontakt@packpack.pl');
   document.getElementById('quoteOutput').value = lines.join('\n');
-  showStatus('fullprint','QUOTE EN + EUR wygenerowane.','ok');
+  showStatus('fullprint','Wstępna wycena EN + EUR wygenerowana.','ok');
 }
 
 function copyQuote() { const ta = document.getElementById('quoteOutput'); ta.select(); document.execCommand('copy'); showStatus('fullprint','Skopiowano.','ok'); }
