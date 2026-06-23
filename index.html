@@ -252,6 +252,41 @@
   @media (max-width: 900px) {
     .sidebar-right { width: 300px; }
   }
+  .quote-list-item { cursor: pointer; transition: background 0.15s; }
+  .quote-list-item:hover { background: #f0f0f0; }
+
+  /* ========== MODAL ========== */
+  .modal-overlay {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5); z-index: 1000;
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  .modal-box {
+    background: #fff; border-radius: var(--radius);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    width: 100%; max-width: 600px; max-height: 90vh;
+    overflow-y: auto; padding: 24px;
+  }
+  .modal-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 16px; padding-bottom: 12px;
+    border-bottom: 2px solid var(--accent);
+  }
+  .modal-header h2 { margin: 0; font-size: 1.2rem; }
+  .modal-close {
+    background: none; border: none; font-size: 1.5rem; cursor: pointer;
+    color: #666; padding: 0; width: 36px; height: 36px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 50%;
+  }
+  .modal-close:hover { background: #f0f0f0; }
+  .modal-section { margin-bottom: 16px; }
+  .modal-section label { font-size: 0.8rem; color: #666; margin-bottom: 4px; }
+  .modal-section .value { font-weight: 600; font-size: 1rem; }
+  .modal-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border); }
+  .status-select { padding: 8px 12px; border-radius: var(--radius); border: 1px solid var(--border); font-size: 0.9rem; }
+
   @media (max-width: 640px) {
     .app-layout { flex-direction: column; }
     .sidebar-right { width: 100%; border-left: none; border-top: 1px solid var(--border); }
@@ -721,7 +756,7 @@ async function loadQuotes() {
     filtered.forEach(q => {
       const statusLabel = statusLabels[q.status] || q.status;
       const badge = badgeClass[q.status] || 'badge-draft';
-      html += `<div class="quote-list-item">
+      html += `<div class="quote-list-item" onclick="showQuoteDetail('${q.id}')">
         <div class="ref">${q.reference_number}</div>
         <div class="meta">${q.type === 'overprint' ? 'Overprint' : 'Fullprint'} · ${new Date(q.created_at).toLocaleDateString('pl-PL')}</div>
         <div class="value">${q.total_netto.toFixed(2)} ${q.currency} <span class="quote-badge ${badge}">${statusLabel}</span></div>
@@ -729,6 +764,110 @@ async function loadQuotes() {
     });
     list.innerHTML = html;
   } catch (e) { console.error('loadQuotes error:', e); }
+}
+
+/* ==================== MODAL / DETAIL ==================== */
+
+let currentQuoteId = null;
+
+async function showQuoteDetail(id) {
+  if (!currentUser || !supabaseClient) return;
+  currentQuoteId = id;
+  try {
+    const { data, error } = await supabaseClient.from('pp_quotes').select('*').eq('id', id).eq('user_id', currentUser.id).single();
+    if (error || !data) { alert('Nie znaleziono wyceny.'); return; }
+
+    const statusLabels = { draft: 'Robocza', sent: 'Wysłana', waiting: 'Czeka', expired: 'Przeterm.', responded: 'Odpowiedź', won: 'Wygrana', lost: 'Przegrana' };
+    const statusOptions = Object.entries(statusLabels).map(([k, v]) => `<option value="${k}" ${data.status === k ? 'selected' : ''}>${v}</option>`).join('');
+
+    let itemsHtml = '<table class="result-table"><thead><tr><th>Produkt/Materiał</th><th>Rozmiar</th><th>Ilość</th><th>Cena</th></tr></thead><tbody>';
+    if (data.items && data.items.length) {
+      data.items.forEach(it => {
+        const name = it.product || it.material || '-';
+        itemsHtml += `<tr><td>${name}</td><td>${it.size || '-'}</td><td>${it.qty || 0}</td><td>${it.price ? it.price.toFixed(2) : '-'} PLN</td></tr>`;
+      });
+    }
+    itemsHtml += '</tbody></table>';
+
+    const modal = document.createElement('div');
+    modal.id = 'quoteModal';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+      <div class="modal-box">
+        <div class="modal-header">
+          <h2>Wycena ${data.reference_number}</h2>
+          <button class="modal-close" onclick="closeModal()">&times;</button>
+        </div>
+        <div class="modal-section">
+          <label>Typ</label>
+          <div class="value">${data.type === 'overprint' ? 'Overprint' : 'Fullprint'}</div>
+        </div>
+        <div class="modal-section">
+          <label>Wartość netto</label>
+          <div class="value">${data.total_netto.toFixed(2)} ${data.currency}</div>
+        </div>
+        <div class="modal-section">
+          <label>Data utworzenia</label>
+          <div class="value">${new Date(data.created_at).toLocaleString('pl-PL')}</div>
+        </div>
+        <div class="modal-section">
+          <label>Pozycje</label>
+          ${itemsHtml}
+        </div>
+        <div class="modal-section">
+          <label>Status</label>
+          <select id="modalStatus" class="status-select" onchange="updateQuoteStatus('${data.id}', this.value)">
+            ${statusOptions}
+          </select>
+        </div>
+        <div class="modal-section">
+          <label>Notatki</label>
+          <textarea id="modalNotes" rows="2" placeholder="Dodaj notatkę...">${data.notes || ''}</textarea>
+        </div>
+        <div class="modal-actions">
+          <button class="btn-primary btn-small" onclick="saveQuoteNotes()">Zapisz notatki</button>
+          <button class="btn-danger btn-small" onclick="deleteQuote('${data.id}')">Usuń wycenę</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+  } catch (e) { console.error('showQuoteDetail error:', e); }
+}
+
+function closeModal() {
+  const modal = document.getElementById('quoteModal');
+  if (modal) modal.remove();
+  currentQuoteId = null;
+}
+
+async function updateQuoteStatus(id, newStatus) {
+  if (!supabaseClient || !currentUser) return;
+  try {
+    const { error } = await supabaseClient.from('pp_quotes').update({ status: newStatus, updated_at: new Date().toISOString() }).eq('id', id);
+    if (error) alert('Błąd: ' + error.message);
+    else { loadQuotes(); }
+  } catch (e) { console.error('updateQuoteStatus error:', e); }
+}
+
+async function saveQuoteNotes() {
+  if (!supabaseClient || !currentUser || !currentQuoteId) return;
+  const notes = document.getElementById('modalNotes').value;
+  try {
+    const { error } = await supabaseClient.from('pp_quotes').update({ notes: notes, updated_at: new Date().toISOString() }).eq('id', currentQuoteId);
+    if (error) alert('Błąd: ' + error.message);
+    else alert('Notatki zapisane!');
+  } catch (e) { console.error('saveQuoteNotes error:', e); }
+}
+
+async function deleteQuote(id) {
+  if (!confirm('Czy na pewno chcesz usunąć tę wycenę?')) return;
+  if (!supabaseClient || !currentUser) return;
+  try {
+    const { error } = await supabaseClient.from('pp_quotes').delete().eq('id', id);
+    if (error) alert('Błąd: ' + error.message);
+    else { closeModal(); loadQuotes(); }
+  } catch (e) { console.error('deleteQuote error:', e); }
 }
 
 async function submitFeedback() {
