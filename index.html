@@ -34,6 +34,8 @@
   .app-layout {
     display: flex;
     height: 100vh;
+    position: relative;
+    overflow: hidden;
   }
 
   /* Lewa kolumna - kalkulator */
@@ -41,27 +43,25 @@
     flex: 1;
     overflow-y: auto;
     padding: 16px 20px;
+    /* Zawsze pełna szerokość, sidebar jest overlay */
   }
 
-  /* Prawa kolumna - wyceny */
+  /* Prawa kolumna - wyceny (overlay drawer) */
   .sidebar-right {
     width: 380px;
     background: var(--card);
     border-left: 1px solid var(--border);
     display: flex;
     flex-direction: column;
-    transition: width 0.3s ease;
+    position: absolute;
+    right: 0;
+    top: 0;
+    height: 100%;
+    z-index: 10;
+    transition: transform 0.3s ease;
   }
   .sidebar-right.collapsed {
-    width: 0;
-    min-width: 0;
-    overflow: hidden;
-    border: none;
-    padding: 0;
-  }
-  .sidebar-right.collapsed .sidebar-header,
-  .sidebar-right.collapsed .sidebar-content {
-    display: none !important;
+    transform: translateX(100%);
   }
 
   .sidebar-header {
@@ -291,8 +291,14 @@
 
   @media (max-width: 640px) {
     .app-layout { flex-direction: column; }
-    .sidebar-right { width: 100%; border-left: none; border-top: 1px solid var(--border); }
-    .sidebar-right.collapsed { width: 100%; height: 48px; }
+    .sidebar-right {
+      position: relative;
+      width: 100%;
+      border-left: none;
+      border-top: 1px solid var(--border);
+      transform: none !important;
+    }
+    .sidebar-right.collapsed { transform: none !important; height: 48px; }
   }
 </style>
 </head>
