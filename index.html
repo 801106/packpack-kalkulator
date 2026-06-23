@@ -956,12 +956,18 @@ async function generateQuoteEnEur() {
 
   let totalEur = 0;
   let lines = [];
-  lines.push('PackPack.pl — Preliminary Quote');
+  lines.push('PackPack.pl');
+  lines.push('NIP: 7272845933 | KRS: 0000867114');
+  lines.push('Phone: +48 666 038 495 | +48 666 374 391');
+  lines.push('Email: kontakt@packpack.pl | www.packpack.pl');
+  lines.push('');
+  lines.push('═══════════════════════════════════════');
+  lines.push('          PRELIMINARY QUOTE');
+  lines.push('═══════════════════════════════════════');
   lines.push('');
   lines.push('Dear Client,'); lines.push('');
-  lines.push('Please find below our preliminary offer:'); lines.push('');
-  lines.push('Item | Material | Size | Finish | Qty | Unit price (EUR) | Total (EUR)');
-  lines.push('--- | --- | --- | --- | --- | --- | ---');
+  lines.push('Please find below our preliminary offer. All prices are final and include our margin.'); lines.push('');
+
   cards.forEach((card, idx) => {
     const material = card.querySelector('.fp-material').value;
     const size = card.querySelector('.fp-size').value;
@@ -982,13 +988,22 @@ async function generateQuoteEnEur() {
     const unitPriceEur = unitPricePln / eurRate;
     const totalLineEur = unitPriceEur * qty;
     totalEur += totalLineEur;
-    lines.push(`${idx+1} | ${material} | ${size} | ${finish === 'glossy' ? 'Glossy' : 'Matt'} | ${qty} | ${unitPriceEur.toFixed(4)} EUR | ${totalLineEur.toFixed(2)} EUR`);
-    if (optLabels.length) lines.push(`    Options: ${optLabels.join(', ')}`);
-    if (notes) lines.push(`    Print: ${notes}`);
+
+    lines.push(`───────────────── Item ${idx+1} ─────────────────`);
+    lines.push(`Material:    ${material}`);
+    lines.push(`Size:        ${size}`);
+    lines.push(`Finish:      ${finish === 'glossy' ? 'Glossy' : 'Matt'}`);
+    lines.push(`Quantity:    ${qty} pcs`);
+    lines.push(`Unit price:  ${unitPriceEur.toFixed(4)} EUR/pc`);
+    lines.push(`Line total:  ${totalLineEur.toFixed(2)} EUR`);
+    if (optLabels.length) lines.push(`Options:     ${optLabels.join(', ')}`);
+    if (notes) lines.push(`Print:       ${notes}`);
     lines.push('');
   });
-  lines.push('');
-  lines.push(`**Total net: ${totalEur.toFixed(2)} EUR**`);
+
+  lines.push('═══════════════════════════════════════');
+  lines.push(`TOTAL NET: ${totalEur.toFixed(2)} EUR`);
+  lines.push('═══════════════════════════════════════');
   lines.push('');
   lines.push('Terms:');
   lines.push('- Prices are net, excluding VAT');
