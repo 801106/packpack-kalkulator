@@ -904,6 +904,7 @@ async function showQuoteDetail(id) {
         </div>
         <div class="modal-actions">
           <button class="btn-primary btn-small" onclick="saveQuoteNotes()">Zapisz notatki</button>
+          <button class="btn-secondary btn-small" onclick="printQuotePdf('${data.id}')">📄 PDF</button>
           <button class="btn-danger btn-small" onclick="deleteQuote('${data.id}')">Usuń wycenę</button>
         </div>
       </div>
@@ -917,6 +918,26 @@ function closeModal() {
   const modal = document.getElementById('quoteModal');
   if (modal) modal.remove();
   currentQuoteId = null;
+}
+
+async function printQuotePdf(quoteId) {
+  if (!supabaseClient || !currentUser) return;
+  try {
+    const { data, error } = await supabaseClient.from('pp_quotes').select('*').eq('id', quoteId).eq('user_id', currentUser.id).single();
+    if (error || !data) { alert('Nie znaleziono wyceny.'); return; }
+    const now = new Date(data.created_at).toLocaleString('pl-PL');
+    const typeLabel = data.type === 'overprint' ? 'Wycena Overprint' : 'Wycena Fullprint';
+    const logoSvg = `<svg width="120" height="70" viewBox="0 0 120 70" xmlns="http://www.w3.org/2000/svg"><style>.p{font-family:Arial,sans-serif;font-weight:800;font-size:28px;letter-spacing:-0.5px;}</style><text x="0" y="30" class="p" fill="#1a1a1a">pack</text><text x="0" y="62" class="p" fill="#1a1a1a">pack</text></svg>`;
+    let rowsHtml = '';
+    if (data.items && data.items.length) {
+      data.items.forEach(it => {
+        const name = it.product || it.material || '';
+        rowsHtml += `<tr><td>${name}</td><td>${it.size || ''}</td><td>${it.qty || 0}</td><td>${(it.price || 0).toFixed(2)}</td></tr>`;
+      });
+    }
+    const html = `<!DOCTYPE html><html lang="pl"><head><meta charset="UTF-8"><title>${typeLabel} — ${data.reference_number}</title><style>@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');body{font-family:'Inter',Arial,sans-serif;margin:0;padding:24px 32px;color:#1a1a1a;background:#fff;}.header{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #F26522;padding-bottom:16px;margin-bottom:20px;}.title-block{text-align:right;}.title-block h1{margin:0;font-size:18px;font-weight:700;}.ref{font-size:10pt;color:#666;}table{width:100%;border-collapse:collapse;font-size:9.5pt;margin-top:12px;}th,td{border:1px solid #ddd;padding:7px 9px;text-align:left;}th{background:#fafafa;font-weight:600;font-size:9pt;color:#333;}tr:nth-child(even){background:#f9f9f9;}.summary{font-weight:700;font-size:13pt;margin-top:14px;color:#F26522;text-align:right;}.footer{margin-top:40px;border-top:1px solid #eee;padding-top:12px;font-size:8pt;color:#666;display:flex;justify-content:space-between;}</style></head><body><div class="header">${logoSvg}<div class="title-block"><h1>${typeLabel}</h1><p class="ref">${data.reference_number}</p><p>Data: ${now}</p></div></div><table><thead><tr><th>Produkt/Materiał</th><th>Rozmiar</th><th>Ilość</th><th>Cena</th></tr></thead><tbody>${rowsHtml}</tbody></table><div class="summary">Suma netto: ${data.total_netto.toFixed(2)} ${data.currency}</div><div class="footer"><div><strong>Pack Pack Sp. z o.o.</strong><br>NIP: 7272845933 | KRS: 0000867114</div><div style="text-align:right">666 038 495 | 666 374 391<br>kontakt@packpack.pl | www.packpack.pl</div></div></body></html>`;
+    const iframe = document.createElement('iframe'); iframe.style.position='fixed'; iframe.style.top='-9999px'; iframe.style.left='-9999px'; iframe.style.width='1px'; iframe.style.height='1px'; document.body.appendChild(iframe); iframe.contentWindow.document.open(); iframe.contentWindow.document.write(html); iframe.contentWindow.document.close(); setTimeout(() => { iframe.contentWindow.focus(); iframe.contentWindow.print(); setTimeout(() => { if (iframe.parentNode) iframe.parentNode.removeChild(iframe); }, 2000); }, 500);
+  } catch (e) { console.error('printQuotePdf error:', e); }
 }
 
 async function updateQuoteStatus(id, newStatus) {
