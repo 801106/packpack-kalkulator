@@ -456,6 +456,7 @@
         <div id="fullprintItems"></div>
         <div class="actions">
           <button class="btn-primary btn-small" onclick="addFullprintItem()">+ Dodaj</button>
+          <button class="btn-secondary btn-small" onclick="openManualQuote()">➕ Wycena manualna</button>
           <button class="btn-success btn-small" onclick="calcFullprint()">Oblicz</button>
         </div>
         <div id="fullprintResults" class="results"></div>
@@ -851,7 +852,8 @@ function calcOverprint() {
   document.getElementById('overprintResults').innerHTML = html; document.getElementById('overprintPrintActions').style.display = 'flex';
 }
 function calcFullprint() {
-  const cards = document.querySelectorAll('#fullprintItems .item-card'); if (!cards.length) { showStatus('fullprint','Dodaj pozycję.','err'); return; }
+  const cards = document.querySelectorAll('#fullprintItems .item-card');
+  if (!cards.length && !manualItems.length) { showStatus('fullprint','Dodaj pozycję.','err'); return; }
   const laczne = document.getElementById('chkLaczne').checked; let totalQty = 0; const items = [];
   cards.forEach(card => {
     const material = card.querySelector('.fp-material').value;
@@ -867,22 +869,42 @@ function calcFullprint() {
     totalQty += qty;
   });
   const eurRate = parseFloat(document.getElementById('rateEur').value) || 4.35;
-  let html = '<table class="result-table"><thead><tr><th>Materiał</th><th>Rozmiar</th><th>Wykończenie</th><th>Ilość</th><th>Cena zakupu</th><th>Marża</th><th>Opcje</th><th>Cena klienta</th><th>Wartość</th></tr></thead><tbody>';
+  let html = '';
   let grandTotal = 0;
-  items.forEach(it => {
-    const qtyForMargin = laczne ? totalQty : it.qty;
-    const marginPln = getFullprintMargin(it.material, qtyForMargin);
-    const clientPrice = it.price + marginPln + it.surcharge;
-    const total = clientPrice * it.qty;
-    grandTotal += total;
-    const optLabels = [];
-    for (const opt of fullprintOptions) { if (it.options[opt.id]) optLabels.push(opt.label); }
-    const optText = optLabels.length ? optLabels.join(', ') : '—';
-    html += `<tr><td>${it.material}</td><td>${it.size}</td><td>${it.finish==='glossy'?'Glossy':'Matt'}</td><td>${it.qty}</td><td>${it.price.toFixed(2)}</td><td>${marginPln.toFixed(2)}</td><td>${optText}</td><td>${clientPrice.toFixed(2)}</td><td>${total.toFixed(2)}</td></tr>`;
-  });
-  html += '</tbody></table>';
+
+  if (items.length) {
+    html += '<table class="result-table"><thead><tr><th>Materiał</th><th>Rozmiar</th><th>Wykończenie</th><th>Ilość</th><th>Cena zakupu</th><th>Marża</th><th>Opcje</th><th>Cena klienta</th><th>Wartość</th></tr></thead><tbody>';
+    items.forEach(it => {
+      const qtyForMargin = laczne ? totalQty : it.qty;
+      const marginPln = getFullprintMargin(it.material, qtyForMargin);
+      const clientPrice = it.price + marginPln + it.surcharge;
+      const total = clientPrice * it.qty;
+      grandTotal += total;
+      const optLabels = [];
+      for (const opt of fullprintOptions) { if (it.options[opt.id]) optLabels.push(opt.label); }
+      const optText = optLabels.length ? optLabels.join(', ') : '—';
+      html += `<tr><td>${it.material}</td><td>${it.size}</td><td>${it.finish==='glossy'?'Glossy':'Matt'}</td><td>${it.qty}</td><td>${it.price.toFixed(2)}</td><td>${marginPln.toFixed(2)}</td><td>${optText}</td><td>${clientPrice.toFixed(2)}</td><td>${total.toFixed(2)}</td></tr>`;
+    });
+    html += '</tbody></table>';
+  }
+
+  if (manualItems.length) {
+    html += '<h3 style="font-size:0.95rem;margin:16px 0 8px;">Pozycje manualne</h3>';
+    html += '<table class="result-table"><thead><tr><th>Materiał</th><th>Rozmiar</th><th>Wykońc.</th><th>Ilość</th><th>Cena zak.</th><th>Marża</th><th>Opcje</th><th>Cena kl.</th><th>Wartość</th><th></th></tr></thead><tbody>';
+    manualItems.forEach((it, idx) => {
+      const clientPrice = it.price + it.margin + it.surcharge;
+      const total = clientPrice * it.qty;
+      grandTotal += total;
+      totalQty += it.qty;
+      const optLabels = [];
+      for (const opt of fullprintOptions) { if (it.options[opt.id]) optLabels.push(opt.label); }
+      html += `<tr><td>${it.material}</td><td>${it.size}</td><td>${it.finish==='glossy'?'Glossy':'Matt'}</td><td>${it.qty}</td><td>${it.price.toFixed(2)}</td><td>${it.margin.toFixed(2)}</td><td>${optLabels.join(', ')||'—'}</td><td>${clientPrice.toFixed(2)}</td><td>${total.toFixed(2)}</td><td><button class="btn-danger btn-small" onclick="removeManualItem(${idx})">🗑</button></td></tr>`;
+    });
+    html += '</tbody></table>';
+  }
+
   html += `<div class="summary">Suma netto: ${grandTotal.toFixed(2)} PLN | EUR: ${(grandTotal/eurRate).toFixed(2)}</div>`;
-  if (laczne) html += `<div class="status info">Łączne: ${totalQty} szt</div>`;
+  if (laczne && totalQty > 0) html += `<div class="status info">Łączne: ${totalQty} szt</div>`;
   document.getElementById('fullprintResults').innerHTML = html;
   document.getElementById('fullprintPrintActions').style.display = 'flex';
 }
@@ -1274,11 +1296,148 @@ async function submitFeedback() {
   try { const { error } = await supabaseClient.from('pp_feedback').insert([{ user_id: currentUser.id, user_name: currentUser.email, category: category, content: content }]); if (error) statusEl.innerHTML = '<span class="status err">Błąd: ' + error.message + '</span>'; else { statusEl.innerHTML = '<span class="status ok">Wysłane!</span>'; document.getElementById('fbContent').value = ''; } } catch (e) { statusEl.innerHTML = '<span class="status err">Błąd.</span>'; }
 }
 
+/* ==================== MANUAL QUOTE ==================== */
+let manualItems = [];
+
+function openManualQuote() {
+  document.getElementById('manualQuoteModal').style.display = 'flex';
+  document.getElementById('manualMaterial').value = '';
+  document.getElementById('manualSize').value = '';
+  document.getElementById('manualFinish').value = 'glossy';
+  document.getElementById('manualQty').value = '500';
+  document.getElementById('manualPrice').value = '';
+  document.getElementById('manualMargin').value = '';
+  document.querySelectorAll('#manualOptions input[type="checkbox"]').forEach(cb => cb.checked = false);
+}
+
+function closeManualQuote() {
+  document.getElementById('manualQuoteModal').style.display = 'none';
+}
+
+function fillManualMargin() {
+  const qty = parseInt(document.getElementById('manualQty').value, 10) || 0;
+  const margin = getFullprintMargin('', qty);
+  document.getElementById('manualMargin').value = margin.toFixed(2);
+}
+
+function addManualQuote() {
+  const material = document.getElementById('manualMaterial').value.trim();
+  const size = document.getElementById('manualSize').value.trim();
+  const finish = document.getElementById('manualFinish').value;
+  const qty = parseInt(document.getElementById('manualQty').value, 10) || 0;
+  const price = parseFloat(document.getElementById('manualPrice').value) || 0;
+  let margin = parseFloat(document.getElementById('manualMargin').value);
+  if (isNaN(margin)) margin = getFullprintMargin('', qty);
+
+  const options = {};
+  let surcharge = 0;
+  document.querySelectorAll('#manualOptions input[type="checkbox"]:checked').forEach(cb => {
+    options[cb.dataset.opt] = true;
+    const optDef = fullprintOptions.find(o => o.id === cb.dataset.opt);
+    if (optDef) surcharge += optDef.surcharge;
+  });
+
+  if (!material || !size || qty <= 0 || price <= 0) {
+    alert('Wypełnij materiał, rozmiar, ilość i cenę zakupu.');
+    return;
+  }
+
+  manualItems.push({ material, size, finish, qty, price, margin, surcharge, options, isManual: true });
+  closeManualQuote();
+  renderManualItems();
+  showStatus('fullprint', 'Pozycja manualna dodana. Kliknij Oblicz aby zaktualizować.', 'ok');
+}
+
+function renderManualItems() {
+  let container = document.getElementById('manualItemsList');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'manualItemsList';
+    container.style.marginTop = '12px';
+    document.getElementById('fullprintResults').appendChild(container);
+  }
+  if (!manualItems.length) { container.innerHTML = ''; return; }
+
+  let html = '<h3 style="font-size:0.95rem;margin:16px 0 8px;">Pozycje manualne</h3>';
+  html += '<table class="result-table"><thead><tr><th>Materiał</th><th>Rozmiar</th><th>Wykońc.</th><th>Ilość</th><th>Cena zak.</th><th>Marża</th><th>Opcje</th><th>Cena kl.</th><th>Wartość</th><th></th></tr></thead><tbody>';
+  let manualTotal = 0;
+  manualItems.forEach((it, idx) => {
+    const clientPrice = it.price + it.margin + it.surcharge;
+    const total = clientPrice * it.qty;
+    manualTotal += total;
+    const optLabels = [];
+    for (const opt of fullprintOptions) { if (it.options[opt.id]) optLabels.push(opt.label); }
+    html += `<tr><td>${it.material}</td><td>${it.size}</td><td>${it.finish==='glossy'?'Glossy':'Matt'}</td><td>${it.qty}</td><td>${it.price.toFixed(2)}</td><td>${it.margin.toFixed(2)}</td><td>${optLabels.join(', ')||'—'}</td><td>${clientPrice.toFixed(2)}</td><td>${total.toFixed(2)}</td><td><button class="btn-danger btn-small" onclick="removeManualItem(${idx})">🗑</button></td></tr>`;
+  });
+  html += '</tbody></table>';
+  html += `<div class="summary">Suma manualna: ${manualTotal.toFixed(2)} PLN</div>`;
+  container.innerHTML = html;
+}
+
+function removeManualItem(idx) {
+  manualItems.splice(idx, 1);
+  renderManualItems();
+}
+
 /* ==================== INICJALIZACJA ==================== */
 initSupabase();
 addOverprintItem();
 addFullprintItem();
 </script>
 
+  <!-- MANUAL QUOTE MODAL -->
+  <div id="manualQuoteModal" class="modal-overlay" style="display:none;">
+    <div class="modal-box" style="max-width:500px;">
+      <div class="modal-header">
+        <h2>Wycena manualna (nietypowa)</h2>
+        <button class="modal-close" onclick="closeManualQuote()">&times;</button>
+      </div>
+      <div class="modal-section">
+        <label>Materiał</label>
+        <input type="text" id="manualMaterial" placeholder="np. PET 12/PE 70-100" style="width:100%;">
+      </div>
+      <div class="modal-section">
+        <label>Rozmiar</label>
+        <input type="text" id="manualSize" placeholder="np. 500ml" style="width:100%;">
+      </div>
+      <div class="modal-section">
+        <label>Wykończenie</label>
+        <select id="manualFinish" style="width:100%;"><option value="glossy">Glossy</option><option value="matt">Matt</option></select>
+      </div>
+      <div class="modal-section">
+        <label>Ilość</label>
+        <input type="number" id="manualQty" min="1" value="500" style="width:100%;">
+      </div>
+      <div class="modal-section">
+        <label>Cena zakupu / szt (PLN)</label>
+        <input type="number" step="0.01" id="manualPrice" placeholder="0.00" style="width:100%;">
+      </div>
+      <div class="modal-section">
+        <label>Marża / szt (PLN) — auto z tabeli lub ręcznie</label>
+        <input type="number" step="0.01" id="manualMargin" placeholder="auto" style="width:100%;">
+        <button class="btn-secondary btn-small" onclick="fillManualMargin()" style="margin-top:4px;">Uzupełnij z tabeli</button>
+      </div>
+      <div class="modal-section">
+        <label>Opcje dodatkowe</label>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;" id="manualOptions">
+          <label style="font-size:0.8rem;"><input type="checkbox" data-opt="round_corners"> Zaokrąglone rogi</label>
+          <label style="font-size:0.8rem;"><input type="checkbox" data-opt="zip_lock"> Struna</label>
+          <label style="font-size:0.8rem;"><input type="checkbox" data-opt="tear_notch"> Nacinnik</label>
+          <label style="font-size:0.8rem;"><input type="checkbox" data-opt="metallized"> Metaliza</label>
+          <label style="font-size:0.8rem;"><input type="checkbox" data-opt="holographic"> Holografic</label>
+          <label style="font-size:0.8rem;"><input type="checkbox" data-opt="soft_touch"> Soft touch</label>
+          <label style="font-size:0.8rem;"><input type="checkbox" data-opt="coffee_valve"> Wentyl do kawy</label>
+          <label style="font-size:0.8rem;"><input type="checkbox" data-opt="hot_foil"> Hot foil</label>
+          <label style="font-size:0.8rem;"><input type="checkbox" data-opt="euro_hanger"> Eurozawieszka</label>
+          <label style="font-size:0.8rem;"><input type="checkbox" data-opt="euro_hole"> Eurodziurka</label>
+          <label style="font-size:0.8rem;"><input type="checkbox" data-opt="open_zip"> Otwarta struna</label>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-primary btn-small" onclick="addManualQuote()">Dodaj do wyceny</button>
+        <button class="btn-secondary btn-small" onclick="closeManualQuote()">Anuluj</button>
+      </div>
+    </div>
+  </div>
 </body>
 </html>
