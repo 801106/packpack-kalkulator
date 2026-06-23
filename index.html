@@ -867,6 +867,8 @@ async function showQuoteDetail(id) {
     }
     itemsHtml += '</tbody></table>';
 
+    let reminderHtml = checkReminder(data.sent_log, data.created_at);
+
     const modal = document.createElement('div');
     modal.id = 'quoteModal';
     modal.className = 'modal-overlay';
@@ -888,6 +890,7 @@ async function showQuoteDetail(id) {
           <label>Data utworzenia</label>
           <div class="value">${new Date(data.created_at).toLocaleString('pl-PL')}</div>
         </div>
+        ${reminderHtml}
         <div class="modal-section">
           <label>Pozycje</label>
           ${itemsHtml}
@@ -955,6 +958,35 @@ function formatSentLog(sentLog) {
     const type = entry.type === 'client' ? 'Klient' : 'Kontrahent';
     return `• ${date} — ${type}`;
   }).reverse().join('<br>');
+}
+
+function checkReminder(sentLog, createdAt) {
+  const now = new Date();
+  const created = new Date(createdAt);
+  const daysSinceCreated = (now - created) / (1000 * 60 * 60 * 24);
+  
+  if (!sentLog || !sentLog.length) {
+    if (daysSinceCreated > 4) {
+      return `<div class="modal-section" style="background:#fff3e0;border:1px solid #ff9800;border-radius:6px;padding:10px;"><strong>⚠️ Przypomnienie:</strong> Wycena utworzona ${Math.floor(daysSinceCreated)} dni temu. Nie wysłana do klienta.</div>`;
+    }
+    return '';
+  }
+  
+  const clientSends = sentLog.filter(e => e.type === 'client');
+  if (!clientSends.length) {
+    if (daysSinceCreated > 4) {
+      return `<div class="modal-section" style="background:#fff3e0;border:1px solid #ff9800;border-radius:6px;padding:10px;"><strong>⚠️ Przypomnienie:</strong> Wycena utworzona ${Math.floor(daysSinceCreated)} dni temu. Nie wysłana do klienta.</div>`;
+    }
+    return '';
+  }
+  
+  const lastClientSend = new Date(clientSends[clientSends.length - 1].date);
+  const daysSinceSend = (now - lastClientSend) / (1000 * 60 * 60 * 24);
+  
+  if (daysSinceSend > 4) {
+    return `<div class="modal-section" style="background:#fff3e0;border:1px solid #ff9800;border-radius:6px;padding:10px;"><strong>⚠️ Przypomnienie:</strong> Ostatnia wysyłka do klienta ${Math.floor(daysSinceSend)} dni temu. Sprawdź czy klient dostał i czy działał.</div>`;
+  }
+  return '';
 }
 
 async function logSent(quoteId, type) {
