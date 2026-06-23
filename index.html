@@ -1413,11 +1413,20 @@ function switchTab(tab) {
   document.getElementById('tabQuotes').className = tab === 'quotes' ? 'btn-primary active' : 'btn-secondary';
   document.getElementById('tabFeedback').className = tab === 'feedback' ? 'btn-primary active' : 'btn-secondary';
   
-  // Show/hide calculator sections
-  document.getElementById('overprintSection').classList.toggle('hidden', tab !== 'calc');
-  document.getElementById('fullprintSection').classList.toggle('hidden', tab !== 'calc');
+  // Hide all calculator elements
+  const calcElements = document.querySelectorAll('.mode-toggle, .toggles, .rates, #overprintSection, #fullprintSection');
+  calcElements.forEach(el => { if(el) el.style.display = tab === 'calc' ? '' : 'none'; });
   
-  // Show/hide quotes and feedback
+  // Hide mail parser and other standalone cards
+  const cards = document.querySelectorAll('.card');
+  cards.forEach(card => {
+    if (card.id === 'authSection') return;
+    if (card.closest('#tabQuotesContent') || card.closest('#tabFeedbackContent')) return;
+    if (card.id === 'overprintSection' || card.id === 'fullprintSection') return; // already handled
+    card.style.display = tab === 'calc' ? '' : 'none';
+  });
+  
+  // Show/hide quotes and feedback containers
   document.getElementById('tabQuotesContent').classList.toggle('hidden', tab !== 'quotes');
   document.getElementById('tabFeedbackContent').classList.toggle('hidden', tab !== 'feedback');
   
