@@ -3,11 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
 <title>PackPack Kalkulator</title>
-<script src="https://unpkg.com/@supabase/supabase-js@2.0.0/dist/umd/supabase.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
 
@@ -87,7 +83,6 @@
   .btn-success { background: var(--success); color: #fff; }
   .btn-success:hover { background: #388e3c; }
   .btn-small { padding: 6px 10px; font-size: 0.85rem; }
-  .fp-currency-btn.active { background: var(--accent) !important; color: #fff !important; border-color: var(--accent) !important; }
 
   .mode-toggle { display: flex; gap: 10px; justify-content: center; margin-bottom: 16px; }
   .mode-toggle button { flex: 1; max-width: 240px; padding: 12px; font-size: 1rem; }
@@ -144,7 +139,7 @@
     @page { margin: 15mm; }
     body { background: #fff; padding: 0; font-size: 10pt; }
     .container { max-width: 100%; }
-    .no-print, .mode-toggle, .toggles, .rates, .actions, textarea, select, input, button, .item-card, .card:not(.print-visible), #authSection, #tabQuotesContent, #tabFeedbackContent, .fp-currency-btn { display: none !important; }
+    .no-print, .mode-toggle, .toggles, .rates, .actions, textarea, select, input, button, .item-card, .card:not(.print-visible) { display: none !important; }
     .print-visible, .print-only { display: block !important; }
     .results { margin-top: 0; }
     .result-table { font-size: 9.5pt; }
@@ -162,22 +157,14 @@
     .item-grid { grid-template-columns: 1fr; }
   }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
 <body>
 <div class="container">
-  <header>
-    <div style="font-family:'Inter',sans-serif;font-weight:800;font-size:2.2rem;letter-spacing:-1px;line-height:1.1;color:#1a1a1a;display:inline-block;text-align:left;">
-      <div>pack</div>
-      <div>pack</div>
-    </div>
-    <p style="margin-top:10px;color:#666;font-size:0.95rem;">Kalkulator wycen — Overprint & Fullprint</p>
-  </header>
-
   <!-- AUTH SECTION -->
-  <div id="authSection" class="card">
+  <div id="authSection" class="card" style="margin-bottom:12px;">
     <div id="authLoggedOut">
-      <h3 style="margin-top:0">Logowanie</h3>
-      <div class="row" style="gap:16px;">
+      <div class="row" style="gap:12px;align-items:end;">
         <div class="col">
           <label>Email</label>
           <input type="email" id="authEmail" placeholder="twoj@email.pl">
@@ -186,33 +173,29 @@
           <label>Hasło</label>
           <input type="password" id="authPassword" placeholder="••••••••">
         </div>
-        <div class="col" style="min-width:120px;">
-          <label>&nbsp;</label>
+        <div class="col" style="min-width:100px;">
           <button class="btn-primary" onclick="signIn()" style="width:100%">Zaloguj</button>
         </div>
+        <div class="col" style="min-width:100px;">
+          <button class="btn-secondary" onclick="signUp()" style="width:100%">Rejestracja</button>
+        </div>
       </div>
-      <p style="margin-top:10px;font-size:0.85rem;color:#666;">
-        Nie masz konta? <a href="#" onclick="signUp()" style="color:var(--accent);">Zarejestruj się</a> | 
-        <a href="#" onclick="resetPassword()" style="color:var(--accent);">Zapomniałem hasła</a>
-      </p>
       <div id="authStatus" style="margin-top:8px;"></div>
     </div>
     <div id="authLoggedIn" style="display:none;">
       <div class="row" style="justify-content:space-between;align-items:center;">
-        <span>Zalogowany jako: <strong id="authUserName"></strong></span>
-        <button class="btn-secondary btn-small" onclick="signOut()">Wyloguj</button>
+        <span>Zalogowany: <strong id="authUserName"></strong></span>
+        <button class="btn-danger btn-small" onclick="signOut()">Wyloguj</button>
       </div>
     </div>
   </div>
-
-  <!-- TABS -->
-  <div class="card no-print" style="padding:10px;">
-    <div class="mode-toggle" style="margin-bottom:0;">
-      <button id="tabCalc" class="btn-primary active" onclick="switchTab('calc')">🧮 Kalkulator</button>
-      <button id="tabQuotes" class="btn-secondary" onclick="switchTab('quotes')">📋 Moje wyceny</button>
-      <button id="tabFeedback" class="btn-secondary" onclick="switchTab('feedback')">💬 Feedback</button>
+  <header>
+    <div style="font-family:'Inter',sans-serif;font-weight:800;font-size:2.2rem;letter-spacing:-1px;line-height:1.1;color:#1a1a1a;display:inline-block;text-align:left;">
+      <div>pack</div>
+      <div>pack</div>
     </div>
-  </div>
+    <p style="margin-top:10px;color:#666;font-size:0.95rem;">Kalkulator wycen — Overprint & Fullprint</p>
+  </header>
 
   <div class="card">
     <div class="mode-toggle">
@@ -270,19 +253,12 @@
     <div id="overprintResults" class="results"></div>
     <div class="actions no-print" id="overprintPrintActions" style="display:none">
       <button class="btn-secondary" onclick="printResults('overprint')">Drukuj wycenę (PDF)</button>
+      <button class="btn-success" onclick="saveQuote()">💾 Zapisz wycenę</button>
     </div>
   </div>
 
   <div id="fullprintSection" class="card mode-section hidden">
     <h2 style="margin-top:0">Fullprint (outsourcing)</h2>
-    <div style="background:#fff3e0;border:1px solid #ff9800;border-radius:8px;padding:10px;margin-bottom:12px;font-size:0.85rem;color:#e65100;">
-      <strong>⚠️ Wycena wstępna / szacunkowa:</strong> Podane ceny są poglądowe. Dokładna wycena zostanie przedstawiona po otrzymaniu szczegółów od producenta (projekt, kolory, specyfikacja). Wszystkie ceny są netto (bez VAT 23%).
-    </div>
-    <div style="margin-bottom:12px;">
-      <span style="font-size:0.9rem;font-weight:600;color:#666;">Waluta cennika:</span>
-      <button class="fp-currency-btn active" data-curr="PLN" onclick="setFullprintCurrency('PLN')" style="margin-left:6px;padding:4px 14px;border:1px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;font-weight:600;">PLN</button>
-      <button class="fp-currency-btn" data-curr="EUR" onclick="setFullprintCurrency('EUR')" style="margin-left:4px;padding:4px 14px;border:1px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;font-weight:600;">EUR</button>
-    </div>
     <div id="fullprintItems"></div>
     <div class="actions">
       <button class="btn-primary" onclick="addFullprintItem()">+ Dodaj produkt</button>
@@ -291,6 +267,7 @@
     <div id="fullprintResults" class="results"></div>
     <div class="actions no-print" id="fullprintPrintActions" style="display:none">
       <button class="btn-secondary" onclick="printResults('fullprint')">Drukuj wycenę (PDF)</button>
+      <button class="btn-success" onclick="saveQuote()">💾 Zapisz wycenę</button>
     </div>
 
     <h3>QUOTE do kontrahenta (Teresa)</h3>
@@ -456,69 +433,33 @@ const overprintPrintPrices = {
   }
 };
 
-const fullprintMaterials = [
-  "PET 12/PE 70 (Glossy)",
-  "PET 12/ALU 7/PE (Glossy)",
-  "Kraftpaper/ALU7/PE76 (Matte)",
-  "Kraftpaper/PET12/CPP55 (Matte)"
-];
-
+const fullprintMaterials = ["PET 12 / PE 70-100", "PET 12 / PE 128", "Kraft papier", "Aluminium", "Biodegradowalny", "Kompostowalny"];
 const fullprintSizesPerMaterial = {
-  "PET 12/PE 70 (Glossy)": ["100ml", "250ml", "500ml", "750ml", "1000ml", "2000ml", "3000ml"],
-  "PET 12/ALU 7/PE (Glossy)": ["100ml", "250ml", "500ml", "750ml", "1000ml", "2000ml", "3000ml"],
-  "Kraftpaper/ALU7/PE76 (Matte)": ["100ml", "250ml", "500ml", "750ml", "1000ml", "2000ml", "3000ml"],
-  "Kraftpaper/PET12/CPP55 (Matte)": ["100ml", "250ml", "500ml", "750ml", "1000ml", "2000ml", "3000ml"]
+  "PET 12 / PE 70-100": ["100ml", "250ml", "500ml", "750ml", "1000ml", "2000ml", "3000ml"],
+  "PET 12 / PE 128": ["5000ml"],
+  "Kraft papier": ["100ml", "250ml", "500ml", "750ml", "1000ml", "2000ml", "3000ml"],
+  "Aluminium": ["100ml", "250ml", "500ml", "750ml", "1000ml", "2000ml", "3000ml"],
+  "Biodegradowalny": ["100ml", "250ml", "500ml", "750ml", "1000ml", "2000ml", "3000ml"],
+  "Kompostowalny": ["100ml", "250ml", "500ml", "750ml", "1000ml", "2000ml", "3000ml"]
 };
 
-const fullprintPricesPln = {
-  "PET 12/PE 70 (Glossy)": {
-    "100ml":  { "500": 3.98, "1000": 2.28, "5000": 1.41, "10000": 1.21, "15000": 1.07, "20000": 0.94, "50000": 0.64, "100000": 0.54 },
-    "250ml":  { "500": 3.98, "1000": 2.49, "5000": 1.67, "10000": 1.43, "15000": 1.26, "20000": 1.15, "50000": 0.83, "100000": 0.73 },
-    "500ml":  { "500": 3.98, "1000": 2.51, "5000": 1.75, "10000": 1.50, "15000": 1.37, "20000": 1.26, "50000": 0.94, "100000": 0.84 },
-    "750ml":  { "500": 3.98, "1000": 2.74, "5000": 1.97, "10000": 1.72, "15000": 1.63, "20000": 1.57, "50000": 1.45, "100000": 1.35 },
-    "1000ml": { "500": 3.98, "1000": 2.83, "5000": 2.01, "10000": 1.79, "15000": 1.71, "20000": 1.65, "50000": 1.53, "100000": 1.43 },
-    "2000ml": { "500": 4.01, "1000": 3.07, "5000": 2.17, "10000": 1.94, "15000": 1.84, "20000": 1.79, "50000": 1.66, "100000": 1.56 },
-    "3000ml": { "500": 5.04, "1000": 3.83, "5000": 2.65, "10000": 2.45, "15000": 2.34, "20000": 2.31, "50000": 2.17, "100000": 2.07 }
+const fullprintPrices = {
+  "PET 12 / PE 70-100": {
+    "100ml": { "500": 3.90, "1000": 2.24, "5000": 1.40, "10000": 1.20, "15000": 1.06, "20000": 0.94, "50000": 0.64, "100000": 0.54 },
+    "250ml": { "500": 3.90, "1000": 2.45, "5000": 1.65, "10000": 1.41, "15000": 1.25, "20000": 1.13, "50000": 0.83, "100000": 0.73 },
+    "500ml": { "500": 3.90, "1000": 2.47, "5000": 1.73, "10000": 1.48, "15000": 1.36, "20000": 1.24, "50000": 0.94, "100000": 0.84 },
+    "750ml": { "500": 3.90, "1000": 2.69, "5000": 1.94, "10000": 1.70, "15000": 1.61, "20000": 1.55, "50000": 1.45, "100000": 1.35 },
+    "1000ml": { "500": 3.90, "1000": 2.78, "5000": 1.98, "10000": 1.76, "15000": 1.69, "20000": 1.63, "50000": 1.53, "100000": 1.43 },
+    "2000ml": { "500": 3.93, "1000": 3.01, "5000": 2.14, "10000": 1.91, "15000": 1.81, "20000": 1.76, "50000": 1.66, "100000": 1.56 },
+    "3000ml": { "500": 4.93, "1000": 3.75, "5000": 2.60, "10000": 2.41, "15000": 2.29, "20000": 2.27, "50000": 2.17, "100000": 2.07 }
   },
-  "PET 12/ALU 7/PE (Glossy)": {
-    "100ml":  { "500": 3.98, "1000": 2.49, "5000": 1.58, "10000": 1.37, "15000": 1.21, "20000": 1.08, "50000": 0.64, "100000": 0.54 },
-    "250ml":  { "500": 3.98, "1000": 2.87, "5000": 1.95, "10000": 1.64, "15000": 1.49, "20000": 1.36, "50000": 0.83, "100000": 0.73 },
-    "500ml":  { "500": 4.06, "1000": 2.90, "5000": 2.14, "10000": 1.84, "15000": 1.69, "20000": 1.64, "50000": 0.94, "100000": 0.84 },
-    "750ml":  { "500": 4.50, "1000": 3.37, "5000": 2.48, "10000": 2.17, "15000": 2.06, "20000": 2.02, "50000": 1.45, "100000": 1.35 },
-    "1000ml": { "500": 4.60, "1000": 3.70, "5000": 2.61, "10000": 2.40, "15000": 2.26, "20000": 2.20, "50000": 1.53, "100000": 1.43 },
-    "2000ml": { "500": 4.81, "1000": 3.91, "5000": 2.85, "10000": 2.57, "15000": 2.51, "20000": 2.44, "50000": 1.66, "100000": 1.56 },
-    "3000ml": { "500": 6.57, "1000": 5.23, "5000": 3.58, "10000": 3.37, "15000": 3.26, "20000": 3.15, "50000": 2.17, "100000": 2.07 }
+  "PET 12 / PE 128": {
+    "5000ml": { "500": 8.55, "1000": 7.33, "5000": 4.92, "10000": 3.92, "15000": 3.82, "20000": 3.72, "50000": 3.62, "100000": 3.52 }
   },
-  "Kraftpaper/ALU7/PE76 (Matte)": {
-    "100ml":  { "500": 4.05, "1000": 2.69, "5000": 1.70, "10000": 1.45, "15000": 1.28, "20000": 1.15, "50000": 0.64, "100000": 0.54 },
-    "250ml":  { "500": 4.46, "1000": 3.17, "5000": 2.08, "10000": 1.75, "15000": 1.59, "20000": 1.47, "50000": 0.83, "100000": 0.73 },
-    "500ml":  { "500": 4.84, "1000": 3.34, "5000": 2.31, "10000": 1.97, "15000": 1.84, "20000": 1.73, "50000": 0.94, "100000": 0.84 },
-    "750ml":  { "500": 5.15, "1000": 3.97, "5000": 2.72, "10000": 2.42, "15000": 2.36, "20000": 2.29, "50000": 1.45, "100000": 1.35 },
-    "1000ml": { "500": 5.24, "1000": 4.18, "5000": 2.88, "10000": 2.58, "15000": 2.51, "20000": 2.44, "50000": 1.53, "100000": 1.43 },
-    "2000ml": { "500": 5.65, "1000": 4.47, "5000": 3.09, "10000": 2.85, "15000": 2.77, "20000": 2.70, "50000": 1.66, "100000": 1.56 },
-    "3000ml": { "500": 7.95, "1000": 5.75, "5000": 4.01, "10000": 3.80, "15000": 3.68, "20000": 3.63, "50000": 2.17, "100000": 2.07 }
-  },
-  "Kraftpaper/PET12/CPP55 (Matte)": {
-    "100ml":  { "500": 3.98, "1000": 2.51, "5000": 1.59, "10000": 1.37, "15000": 1.20, "20000": 1.08, "50000": 0.64, "100000": 0.54 },
-    "250ml":  { "500": 4.08, "1000": 3.00, "5000": 1.93, "10000": 1.64, "15000": 1.49, "20000": 1.36, "50000": 0.83, "100000": 0.73 },
-    "500ml":  { "500": 4.27, "1000": 3.02, "5000": 2.11, "10000": 1.83, "15000": 1.69, "20000": 1.64, "50000": 0.94, "100000": 0.84 },
-    "750ml":  { "500": 4.78, "1000": 3.47, "5000": 2.45, "10000": 2.15, "15000": 2.04, "20000": 2.01, "50000": 1.45, "100000": 1.35 },
-    "1000ml": { "500": 4.86, "1000": 3.79, "5000": 2.57, "10000": 2.38, "15000": 2.24, "20000": 2.18, "50000": 1.53, "100000": 1.43 },
-    "2000ml": { "500": 5.06, "1000": 3.98, "5000": 2.82, "10000": 2.54, "15000": 2.48, "20000": 2.41, "50000": 1.66, "100000": 1.56 },
-    "3000ml": { "500": 6.65, "1000": 5.20, "5000": 3.53, "10000": 3.33, "15000": 3.22, "20000": 3.12, "50000": 2.17, "100000": 2.07 }
-  }
-};
-
-const fullprintPricesEur = {
-  "PET 12/PE 70 (Glossy)": {
-    "100ml":  { "500": 0.91, "1000": 0.52, "5000": 0.33, "10000": 0.28, "15000": 0.25, "20000": 0.22, "50000": 0.15, "100000": 0.13 },
-    "250ml":  { "500": 0.91, "1000": 0.57, "5000": 0.39, "10000": 0.33, "15000": 0.29, "20000": 0.26, "50000": 0.19, "100000": 0.17 },
-    "500ml":  { "500": 0.91, "1000": 0.58, "5000": 0.40, "10000": 0.35, "15000": 0.32, "20000": 0.29, "50000": 0.22, "100000": 0.20 },
-    "750ml":  { "500": 0.91, "1000": 0.63, "5000": 0.45, "10000": 0.40, "15000": 0.38, "20000": 0.36, "50000": 0.34, "100000": 0.32 },
-    "1000ml": { "500": 0.91, "1000": 0.65, "5000": 0.46, "10000": 0.41, "15000": 0.39, "20000": 0.38, "50000": 0.36, "100000": 0.33 },
-    "2000ml": { "500": 0.92, "1000": 0.71, "5000": 0.50, "10000": 0.45, "15000": 0.42, "20000": 0.41, "50000": 0.39, "100000": 0.37 },
-    "3000ml": { "500": 1.15, "1000": 0.88, "5000": 0.61, "10000": 0.56, "15000": 0.54, "20000": 0.53, "50000": 0.51, "100000": 0.48 }
-  }
+  "Kraft papier":    { "100ml":0.40, "250ml":0.45, "500ml":0.50, "750ml":0.55, "1000ml":0.60, "2000ml":0.75, "3000ml":0.90 },
+  "Aluminium":       { "100ml":0.50, "250ml":0.55, "500ml":0.60, "750ml":0.70, "1000ml":0.80, "2000ml":1.00, "3000ml":1.20 },
+  "Biodegradowalny": { "100ml":0.60, "250ml":0.65, "500ml":0.75, "750ml":0.85, "1000ml":0.95, "2000ml":1.15, "3000ml":1.40 },
+  "Kompostowalny":   { "100ml":0.65, "250ml":0.70, "500ml":0.80, "750ml":0.90, "1000ml":1.00, "2000ml":1.25, "3000ml":1.50 }
 };
 
 const fullprintMargins = [
@@ -540,25 +481,11 @@ function getFullprintMargin(qty) {
   return 0;
 }
 
-let fullprintCurrency = 'PLN';
-
-function setFullprintCurrency(curr) {
-  fullprintCurrency = curr;
-  document.querySelectorAll('.fp-currency-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.curr === curr);
-  });
-  document.querySelectorAll('#fullprintItems .item-card').forEach(card => {
-    const id = card.dataset.id;
-    if (id) updateFpPrice(id);
-  });
-}
-
 function getFullprintPrice(material, size, qty) {
-  const cennik = fullprintCurrency === 'EUR' ? fullprintPricesEur : fullprintPricesPln;
-  const p = cennik[material];
+  const p = fullprintPrices[material];
   if (!p || !p[size]) return 0;
   const price = p[size];
-  if (typeof price === 'number') return price; // placeholder materials (PLN only)
+  if (typeof price === 'number') return price;
   const tiers = price;
   const qtys = Object.keys(tiers).map(Number).sort((a, b) => a - b);
   let chosen = qtys[0];
@@ -829,8 +756,6 @@ function calcFullprint() {
   const laczne = document.getElementById('chkLaczne').checked;
   let totalQty = 0;
   const items = [];
-  const activeCennik = fullprintCurrency === 'EUR' ? fullprintPricesEur : fullprintPricesPln;
-  const curSymbol = fullprintCurrency === 'EUR' ? 'EUR' : 'PLN';
 
   cards.forEach(card => {
     const material = card.querySelector('.fp-material').value;
@@ -851,29 +776,24 @@ function calcFullprint() {
   let grandTotal = 0;
   items.forEach(it => {
     const qtyForMargin = laczne ? totalQty : it.qty;
-    const isTiered = typeof (activeCennik[it.material]?.[it.size]) === 'object';
-    const margin = isTiered ? 0 : getFullprintMargin(qtyForMargin);
-    const clientPrice = it.price + margin;
+    const isTiered = typeof (fullprintPrices[it.material]?.[it.size]) === 'object';
+    const marginPln = isTiered ? 0 : getFullprintMargin(qtyForMargin);
+    const clientPrice = it.price + marginPln;
     const total = clientPrice * it.qty;
     grandTotal += total;
     html += `<tr>
       <td>${it.material}</td>
       <td>${it.size}</td>
       <td>${it.qty}</td>
-      <td>${it.price.toFixed(2)} ${curSymbol}</td>
-      <td>${margin.toFixed(2)} ${curSymbol}</td>
-      <td>${clientPrice.toFixed(2)} ${curSymbol}</td>
-      <td>${total.toFixed(2)} ${curSymbol}</td>
+      <td>${it.price.toFixed(2)} PLN</td>
+      <td>${marginPln.toFixed(2)} PLN</td>
+      <td>${clientPrice.toFixed(2)} PLN</td>
+      <td>${total.toFixed(2)} PLN</td>
     </tr>`;
   });
   html += '</tbody></table>';
-  html += `<div class="summary">Suma całkowita (netto): ${grandTotal.toFixed(2)} ${curSymbol}`;
-  if (fullprintCurrency === 'PLN') {
-    html += ` &nbsp;|&nbsp; Przy kursie EUR/PLN = ${eurRate.toFixed(2)}: ${(grandTotal/eurRate).toFixed(2)} EUR`;
-  } else {
-    html += ` &nbsp;|&nbsp; Przy kursie EUR/PLN = ${eurRate.toFixed(2)}: ${(grandTotal*eurRate).toFixed(2)} PLN`;
-  }
-  html += '</div>';
+  html += `<div class="summary">Suma całkowita (netto): ${grandTotal.toFixed(2)} PLN`;
+  html += ` &nbsp;|&nbsp; Przy kursie EUR/PLN = ${eurRate.toFixed(2)}: ${(grandTotal/eurRate).toFixed(2)} EUR</div>`;
   if (laczne) html += `<div class="status info">Użyto łącznych ilości (${totalQty} szt) dla wyższej marży.</div>`;
   document.getElementById('fullprintResults').innerHTML = html;
   document.getElementById('fullprintPrintActions').style.display = 'flex';
@@ -1090,75 +1010,6 @@ function printResults(mode) {
       kontakt@packpack.pl | www.packpack.pl
     </div>
   </div>
-
-  <!-- QUOTES LIST SECTION -->
-  <div id="tabQuotesContent" class="hidden">
-    <div class="card">
-      <h2 style="margin-top:0">📋 Moje wyceny</h2>
-      <div style="margin-bottom:12px;">
-        <button class="btn-secondary" onclick="switchTab('calc')">← Powrót do kalkulatora</button>
-      </div>
-      <div class="row" style="margin-bottom:12px;gap:12px;">
-        <div class="col">
-          <label>Szukaj</label>
-          <input type="text" id="quoteSearch" placeholder="Nr ref, klient, email..." onkeyup="loadQuotes()">
-        </div>
-        <div class="col">
-          <label>Filtruj status</label>
-          <select id="quoteFilter" onchange="loadQuotes()">
-            <option value="all">Wszystkie</option>
-            <option value="draft">Robocze</option>
-            <option value="sent">Wysłane</option>
-            <option value="waiting">Czekające</option>
-            <option value="expired">Przeterminowane</option>
-            <option value="responded">Odpowiedziane</option>
-            <option value="won">Wygrane</option>
-            <option value="lost">Przegrane</option>
-          </select>
-        </div>
-        <div class="col">
-          <label>&nbsp;</label>
-          <button class="btn-primary" onclick="loadQuotes()">🔄 Odśwież</button>
-        </div>
-      </div>
-      <div id="quotesList" style="overflow-x:auto;">
-        <p class="status info">Zaloguj się, aby zobaczyć wyceny.</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- FEEDBACK SECTION -->
-  <div id="tabFeedbackContent" class="hidden">
-    <div class="card">
-      <h2 style="margin-top:0">💬 Feedback — Udoskonalmy kalkulator</h2>
-      <div style="margin-bottom:12px;">
-        <button class="btn-secondary" onclick="switchTab('calc')">← Powrót do kalkulatora</button>
-      </div>
-      <p style="color:#666;font-size:0.9rem;">Zgłoś błąd, zaproponuj funkcję lub zostaw komentarz.</p>
-      <div class="row" style="gap:12px;margin-top:12px;">
-        <div class="col">
-          <label>Kategoria</label>
-          <select id="fbCategory">
-            <option value="general">Ogólne</option>
-            <option value="bug">Błąd</option>
-            <option value="feature">Propozycja funkcji</option>
-          </select>
-        </div>
-        <div class="col-full">
-          <label>Twój komentarz</label>
-          <textarea id="fbContent" rows="3" placeholder="Co chcesz zgłosić?"></textarea>
-        </div>
-      </div>
-      <div class="actions">
-        <button class="btn-primary" onclick="submitFeedback()">Wyślij feedback</button>
-      </div>
-      <div id="fbStatus"></div>
-      <div id="fbList" style="margin-top:20px;">
-        <p style="color:#666;font-size:0.9rem;">Zaloguj się, aby zobaczyć wszystkie komentarze.</p>
-      </div>
-    </div>
-  </div>
-
 </body>
 </html>`;
 
@@ -1300,12 +1151,6 @@ function fetchNbp() {
     });
 }
 
-/* ==================== INICJALIZACJA ==================== */
-
-// Version cache buster
-const APP_VERSION = '1.0.1';
-
-
 /* ==================== SUPABASE ==================== */
 
 const SUPABASE_URL = 'https://srwhepvvxzxfvcbnztwq.supabase.co';
@@ -1315,43 +1160,25 @@ let supabaseClient = null;
 let currentUser = null;
 
 function initSupabase() {
-  console.log('[DEBUG] initSupabase called, window.supabase =', typeof window.supabase);
   if (typeof window.supabase === 'undefined') {
-    console.warn('[DEBUG] Supabase library not loaded yet. Retrying in 500ms...');
+    console.warn('[Supabase] not loaded, retrying...');
     setTimeout(initSupabase, 500);
     return;
   }
-  console.log('[DEBUG] Creating Supabase client...');
   supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-  console.log('[DEBUG] Supabase client created:', !!supabaseClient);
   initAuth();
 }
 
 async function initAuth() {
-  console.log('[DEBUG] initAuth called');
   try {
     const { data: { session } } = await supabaseClient.auth.getSession();
-    console.log('[DEBUG] getSession result:', { hasSession: !!session, user: session?.user?.email });
-    if (session?.user) {
-      currentUser = session.user;
-      showLoggedIn(session.user.email);
-    } else {
-      showLoggedOut();
-    }
-  } catch (e) {
-    console.error('[DEBUG] initAuth error:', e);
-    showLoggedOut();
-  }
-  
+    if (session?.user) { currentUser = session.user; showLoggedIn(session.user.email); }
+    else { showLoggedOut(); }
+  } catch (e) { console.error('[Auth] error:', e); showLoggedOut(); }
+
   supabaseClient.auth.onAuthStateChange((event, session) => {
-    console.log('[DEBUG] Auth state changed:', event, !!session);
-    if (session?.user) {
-      currentUser = session.user;
-      showLoggedIn(session.user.email);
-    } else {
-      currentUser = null;
-      showLoggedOut();
-    }
+    if (session?.user) { currentUser = session.user; showLoggedIn(session.user.email); }
+    else { currentUser = null; showLoggedOut(); }
   });
 }
 
@@ -1364,8 +1191,6 @@ function showLoggedIn(email) {
 function showLoggedOut() {
   document.getElementById('authLoggedOut').style.display = 'block';
   document.getElementById('authLoggedIn').style.display = 'none';
-  document.getElementById('quotesList').innerHTML = '<p class="status info">Zaloguj się, aby zobaczyć wyceny.</p>';
-  document.getElementById('fbList').innerHTML = '<p style="color:#666;font-size:0.9rem;">Zaloguj się, aby zobaczyć wszystkie komentarze.</p>';
 }
 
 async function signIn() {
@@ -1373,10 +1198,11 @@ async function signIn() {
   const password = document.getElementById('authPassword').value;
   const statusEl = document.getElementById('authStatus');
   if (!email || !password) { statusEl.innerHTML = '<span class="status err">Wypełnij email i hasło.</span>'; return; }
-  
-  const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-  if (error) { statusEl.innerHTML = '<span class="status err">' + error.message + '</span>'; }
-  else { statusEl.innerHTML = '<span class="status ok">Zalogowano!</span>'; }
+  try {
+    const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+    if (error) statusEl.innerHTML = '<span class="status err">' + error.message + '</span>';
+    else statusEl.innerHTML = '<span class="status ok">Zalogowano!</span>';
+  } catch (e) { statusEl.innerHTML = '<span class="status err">Błąd: ' + e.message + '</span>'; }
 }
 
 async function signUp() {
@@ -1384,74 +1210,25 @@ async function signUp() {
   const password = document.getElementById('authPassword').value;
   const statusEl = document.getElementById('authStatus');
   if (!email || !password) { statusEl.innerHTML = '<span class="status err">Wypełnij email i hasło.</span>'; return; }
-  if (password.length < 6) { statusEl.innerHTML = '<span class="status err">Hasło musi mieć min. 6 znaków.</span>'; return; }
-  
-  const { data, error } = await supabaseClient.auth.signUp({ email, password });
-  if (error) { statusEl.innerHTML = '<span class="status err">' + error.message + '</span>'; }
-  else { statusEl.innerHTML = '<span class="status ok">Konto utworzone! Sprawdź email i zaloguj się.</span>'; }
+  if (password.length < 6) { statusEl.innerHTML = '<span class="status err">Hasło min. 6 znaków.</span>'; return; }
+  try {
+    const { error } = await supabaseClient.auth.signUp({ email, password });
+    if (error) statusEl.innerHTML = '<span class="status err">' + error.message + '</span>';
+    else statusEl.innerHTML = '<span class="status ok">Konto utworzone! Sprawdź email.</span>';
+  } catch (e) { statusEl.innerHTML = '<span class="status err">Błąd: ' + e.message + '</span>'; }
 }
 
 async function signOut() {
-  await supabaseClient.auth.signOut();
+  try { await supabaseClient.auth.signOut(); } catch (e) {}
   document.getElementById('authStatus').innerHTML = '';
 }
 
-async function resetPassword() {
-  const email = document.getElementById('authEmail').value.trim();
-  const statusEl = document.getElementById('authStatus');
-  if (!email) { statusEl.innerHTML = '<span class="status err">Wpisz email, aby zresetować hasło.</span>'; return; }
-  
-  const { error } = await supabaseClient.auth.resetPasswordForEmail(email);
-  if (error) { statusEl.innerHTML = '<span class="status err">' + error.message + '</span>'; }
-  else { statusEl.innerHTML = '<span class="status ok">Link do resetu hasła wysłany na email.</span>'; }
-}
-
-/* ==================== TABS ==================== */
-
-function switchTab(tab) {
-  document.getElementById('tabCalc').className = tab === 'calc' ? 'btn-primary active' : 'btn-secondary';
-  document.getElementById('tabQuotes').className = tab === 'quotes' ? 'btn-primary active' : 'btn-secondary';
-  document.getElementById('tabFeedback').className = tab === 'feedback' ? 'btn-primary active' : 'btn-secondary';
-  
-  // Hide all calculator elements
-  const calcElements = document.querySelectorAll('.mode-toggle, .toggles, .rates, #overprintSection, #fullprintSection');
-  calcElements.forEach(el => { if(el) el.style.display = tab === 'calc' ? '' : 'none'; });
-  
-  // Hide mail parser and other standalone cards
-  const cards = document.querySelectorAll('.card');
-  cards.forEach(card => {
-    if (card.id === 'authSection') return;
-    if (card.closest('#tabQuotesContent') || card.closest('#tabFeedbackContent')) return;
-    if (card.id === 'overprintSection' || card.id === 'fullprintSection') return; // already handled
-    card.style.display = tab === 'calc' ? '' : 'none';
-  });
-  
-  // Show/hide quotes and feedback containers
-  document.getElementById('tabQuotesContent').classList.toggle('hidden', tab !== 'quotes');
-  document.getElementById('tabFeedbackContent').classList.toggle('hidden', tab !== 'feedback');
-  
-  if (tab === 'quotes' && currentUser) { try { loadQuotes(); } catch(e) { console.error(e); } }
-  if (tab === 'feedback' && currentUser) { try { loadFeedback(); } catch(e) { console.error(e); } }
-}
-
-/* ==================== SAVE / LOAD QUOTES ==================== */
-
 async function saveQuote() {
-  try {
-    if (!currentUser) { alert('Zaloguj się, aby zapisać wycenę.'); return; }
-    
-    const type = mode;
-    let items = [];
-    let total = 0;
-    
-    // Get client info from prompt if not already set
-    let clientName = prompt('Nazwa klienta / firma:');
-    if (!clientName) clientName = '';
-    let clientEmail = prompt('Email klienta:');
-    if (!clientEmail) clientEmail = '';
-    let clientPhone = prompt('Telefon klienta:');
-    if (!clientPhone) clientPhone = '';
-  
+  if (!currentUser) { alert('Zaloguj się, aby zapisać wycenę.'); return; }
+  const type = mode;
+  let items = [];
+  let total = 0;
+
   if (type === 'overprint') {
     const cards = document.querySelectorAll('#overprintItems .item-card');
     cards.forEach(card => {
@@ -1464,8 +1241,7 @@ async function saveQuote() {
         qty: parseInt(card.querySelector('.op-qty').value, 10) || 0
       });
     });
-    const results = document.getElementById('overprintResults');
-    const summary = results.querySelector('.summary');
+    const summary = document.querySelector('#overprintResults .summary');
     if (summary) total = parseFloat(summary.textContent.replace(/[^\d,]/g, '').replace(',', '.')) || 0;
   } else {
     const cards = document.querySelectorAll('#fullprintItems .item-card');
@@ -1477,302 +1253,36 @@ async function saveQuote() {
         qty: parseInt(card.querySelector('.fp-qty').value, 10) || 0
       });
     });
-    const results = document.getElementById('fullprintResults');
-    const summary = results.querySelector('.summary');
+    const summary = document.querySelector('#fullprintResults .summary');
     if (summary) total = parseFloat(summary.textContent.replace(/[^\d,]/g, '').replace(',', '.')) || 0;
   }
-  
+
   const refNum = 'PP-' + new Date().toISOString().slice(0,10).replace(/-/g,'') + '-' + Math.floor(Math.random()*900+100);
-  
-  const { data, error } = await supabaseClient
-    .from('pp_quotes')
-    .insert([{
-      reference_number: refNum,
-      user_id: currentUser.id,
-      type: type,
-      client_name: clientName,
-      client_email: clientEmail,
-      client_phone: clientPhone,
-      items: items,
-      total_netto: total,
-      currency: fullprintCurrency,
-      status: 'draft'
-    }])
-    .select();
-  
-  if (error) { alert('Błąd zapisu: ' + error.message); }
-  else { alert('Wycena zapisana! Nr: ' + refNum); switchTab('quotes'); }
-  } catch (e) { console.error('saveQuote error:', e); alert('Błąd podczas zapisywania: ' + e.message); }
-}
 
-async function loadQuotes() {
   try {
-    if (!currentUser) return;
-    const filterEl = document.getElementById('quoteFilter');
-    const searchEl = document.getElementById('quoteSearch');
-    const filter = filterEl ? filterEl.value : 'all';
-    const search = searchEl ? searchEl.value.trim().toLowerCase() : '';
-    
-    let query = supabaseClient.from('pp_quotes').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
-    if (filter !== 'all') query = query.eq('status', filter);
-    
-    const { data, error } = await query;
-    const list = document.getElementById('quotesList');
-    if (!list) return;
-    if (error) { list.innerHTML = '<p class="status err">Błąd: ' + error.message + '</p>'; return; }
-    if (!data || !data.length) { list.innerHTML = '<p class="status info">Brak wycen.</p>'; return; }
-  
-  // Filter by search term
-  let filtered = data;
-  if (search) {
-    filtered = data.filter(q => 
-      (q.reference_number && q.reference_number.toLowerCase().includes(search)) ||
-      (q.client_name && q.client_name.toLowerCase().includes(search)) ||
-      (q.client_email && q.client_email.toLowerCase().includes(search))
-    );
-  }
-  if (!filtered.length) { list.innerHTML = '<p class="status info">Nie znaleziono wycen pasujących do wyszukiwania.</p>'; return; }
-  data = filtered;
-  
-  // Check expired
-  const now = new Date();
-  data.forEach(q => {
-    if (q.status === 'sent' && q.sent_at) {
-      const days = (now - new Date(q.sent_at)) / (1000*60*60*24);
-      if (days > 3) updateQuoteStatus(q.id, 'expired');
-    }
-  });
-  
-  // Check for expired quotes and show reminders
-  let reminders = [];
-  data.forEach(q => {
-    if (q.status === 'sent' && q.sent_at) {
-      const days = (now - new Date(q.sent_at)) / (1000*60*60*24);
-      if (days > 3) { updateQuoteStatus(q.id, 'expired'); }
-      else if (days > 1) { reminders.push(q); }
-    }
-  });
-  
-  let reminderHtml = '';
-  if (reminders.length > 0) {
-    reminderHtml = '<div style="background:#fff3e0;border:1px solid #ff9800;border-radius:8px;padding:12px;margin-bottom:16px;">' +
-      '<strong style="color:#e65100;">📢 Przypomnienie:</strong> Masz ' + reminders.length + ' wycenę/y oczekującą/e na odpowiedź od klienta. ' +
-      '<span style="font-size:0.85rem;color:#666;">Czy skontaktowałeś się z klientem?</span></div>';
-  }
-  
-  let html = reminderHtml + '<table class="result-table"><thead><tr><th>Nr ref</th><th>Typ</th><th>Klient</th><th>Email</th><th>Telefon</th><th>Data</th><th>Wartość</th><th>Status</th><th>Akcje</th></tr></thead><tbody>';
-  data.forEach(q => {
-    const statusClass = q.status === 'draft' ? 'gray' : q.status === 'sent' ? 'blue' : q.status === 'waiting' ? 'yellow' : q.status === 'expired' ? 'red' : q.status === 'responded' ? 'green' : q.status === 'won' ? 'gold' : 'gray';
-    const statusLabel = {draft:'Robocza',sent:'Wysłana',waiting:'Czeka',expired:'Przeterm.',responded:'Odpowiedź',won:'Wygrana',lost:'Przegrana'}[q.status] || q.status;
-    html += `<tr style="background:${statusColor(q.status)};">
-      <td><strong>${q.reference_number}</strong></td>
-      <td>${q.type === 'overprint' ? 'Overprint' : 'Fullprint'}</td>
-      <td>${q.client_name || '-'}</td>
-      <td>${q.client_email || '-'}</td>
-      <td>${q.client_phone || '-'}</td>
-      <td>${new Date(q.created_at).toLocaleDateString('pl-PL')}</td>
-      <td>${q.total_netto.toFixed(2)} ${q.currency}</td>
-      <td><span style="padding:2px 8px;border-radius:4px;background:${statusColor(q.status)};color:#fff;font-size:0.8rem;">${statusLabel}</span></td>
-      <td>
-        <button class="btn-small btn-secondary" onclick="showQuoteDetail('${q.id}')">Szczegóły</button>
-        <button class="btn-small btn-primary" onclick="updateQuoteStatus('${q.id}', 'sent')">Wysłano</button>
-        <button class="btn-small btn-success" onclick="updateQuoteStatus('${q.id}', 'won')">Wygrana</button>
-        <button class="btn-small btn-danger" onclick="deleteQuote('${q.id}')">Usuń</button>
-      </td>
-    </tr>`;
-  });
-  html += '</tbody></table>';
-  list.innerHTML = html;
-  } catch (e) { console.error('loadQuotes error:', e); }
+    const { data, error } = await supabaseClient
+      .from('pp_quotes')
+      .insert([{
+        reference_number: refNum,
+        user_id: currentUser.id,
+        type: type,
+        items: items,
+        total_netto: total,
+        currency: 'PLN',
+        status: 'draft'
+      }])
+      .select();
+
+    if (error) { alert('Błąd zapisu: ' + error.message); }
+    else { alert('Wycena zapisana! Nr: ' + refNum); }
+  } catch (e) { alert('Błąd: ' + e.message); }
 }
 
-function statusColor(status) {
-  return {draft:'#999',sent:'#2196F3',waiting:'#FF9800',expired:'#f44336',responded:'#4CAF50',won:'#FFD700',lost:'#9e9e9e'}[status] || '#999';
-}
+/* ==================== INICJALIZACJA ==================== */
 
-async function updateQuoteStatus(id, newStatus) {
-  if (!currentUser) return;
-  const { error } = await supabaseClient.from('pp_quotes').update({ status: newStatus, updated_at: new Date().toISOString() }).eq('id', id);
-  if (error) alert('Błąd: ' + error.message);
-  else loadQuotes();
-}
-
-function showQuoteDetail(id) {
-  // Show detail modal - simplified for now
-  alert('Szczegóły wyceny ' + id);
-}
-
-async function deleteQuote(id) {
-  if (!confirm('Czy na pewno chcesz usunąć tę wycenę?')) return;
-  if (!currentUser) return;
-  const { error } = await supabaseClient.from('pp_quotes').delete().eq('id', id);
-  if (error) alert('Błąd: ' + error.message);
-  else loadQuotes();
-}
-
-/* ==================== FEEDBACK ==================== */
-
-async function submitFeedback() {
-  try {
-    if (!currentUser) { alert('Zaloguj się, aby wysłać feedback.'); return; }
-    const category = document.getElementById('fbCategory').value;
-    const content = document.getElementById('fbContent').value.trim();
-    const statusEl = document.getElementById('fbStatus');
-    if (!content) { statusEl.innerHTML = '<span class="status err">Wpisz treść komentarza.</span>'; return; }
-    
-    const { error } = await supabaseClient.from('pp_feedback').insert([{
-      user_id: currentUser.id,
-      user_name: currentUser.email,
-      category: category,
-      content: content
-    }]);
-    
-    if (error) { statusEl.innerHTML = '<span class="status err">Błąd: ' + error.message + '</span>'; }
-    else { statusEl.innerHTML = '<span class="status ok">Feedback wysłany! Dziękujemy.</span>'; document.getElementById('fbContent').value = ''; loadFeedback(); }
-  } catch (e) { console.error('submitFeedback error:', e); }
-}
-
-async function loadFeedback() {
-  try {
-    if (!currentUser) return;
-    const { data, error } = await supabaseClient.from('pp_feedback').select('*').order('created_at', { ascending: false });
-    const list = document.getElementById('fbList');
-    if (!list) return;
-    if (error || !data || !data.length) { list.innerHTML = '<p style="color:#666;">Brak komentarzy.</p>'; return; }
-    
-    let html = '<h3>Wszystkie komentarze</h3>';
-    data.forEach(fb => {
-      const catLabel = {bug:'🐛 Błąd',feature:'✨ Funkcja',general:'💬 Ogólne'}[fb.category] || '💬';
-      html += `<div style="border:1px solid #e0e0e0;border-radius:8px;padding:10px;margin-bottom:8px;background:#fafafa;">
-        <div style="font-size:0.8rem;color:#666;">${catLabel} · ${fb.user_name} · ${new Date(fb.created_at).toLocaleDateString('pl-PL')}</div>
-        <div style="margin-top:4px;">${fb.content}</div>
-      </div>`;
-    });
-    list.innerHTML = html;
-  } catch (e) { console.error('loadFeedback error:', e); }
-}
-
-/* ==================== SAVE BUTTONS ==================== */
-
-function addSaveButtons() {
-  // Add save button to overprint results
-  const opActions = document.getElementById('overprintPrintActions');
-  if (opActions && opActions.style.display !== 'none' && !opActions.querySelector('.save-btn')) {
-    const btn = document.createElement('button');
-    btn.className = 'btn-success save-btn';
-    btn.style.marginLeft = '8px';
-    btn.textContent = '💾 Zapisz wycenę';
-    btn.onclick = saveQuote;
-    opActions.appendChild(btn);
-  }
-  // Add save button to fullprint results
-  const fpActions = document.getElementById('fullprintPrintActions');
-  if (fpActions && fpActions.style.display !== 'none' && !fpActions.querySelector('.save-btn')) {
-    const btn = document.createElement('button');
-    btn.className = 'btn-success save-btn';
-    btn.style.marginLeft = '8px';
-    btn.textContent = '💾 Zapisz wycenę';
-    btn.onclick = saveQuote;
-    fpActions.appendChild(btn);
-  }
-}
-
-// Patch calcOverprint and calcFullprint to add save buttons
-const originalCalcOverprint = calcOverprint;
-calcOverprint = function() {
-  originalCalcOverprint();
-  setTimeout(() => { try { addSaveButtons(); } catch(e) { console.error(e); } }, 200);
-};
-const originalCalcFullprint = calcFullprint;
-calcFullprint = function() {
-  originalCalcFullprint();
-  setTimeout(() => { try { addSaveButtons(); } catch(e) { console.error(e); } }, 200);
-};
-
-/* ==================== INIT ==================== */
-
-// Explicitly expose Supabase auth functions to window for HTML onclick
-window.signIn = signIn;
-window.signUp = signUp;
-window.signOut = signOut;
-window.resetPassword = resetPassword;
-window.switchTab = switchTab;
-window.saveQuote = saveQuote;
-window.loadQuotes = loadQuotes;
-window.updateQuoteStatus = updateQuoteStatus;
-window.showQuoteDetail = showQuoteDetail;
-window.deleteQuote = deleteQuote;
-window.submitFeedback = submitFeedback;
-window.loadFeedback = loadFeedback;
-window.setFullprintCurrency = setFullprintCurrency;
-window.initSupabase = initSupabase;
-
-window.addEventListener('load', () => {
-  initSupabase();
-  addOverprintItem();
-  addFullprintItem();
-});
+initSupabase();
 addOverprintItem();
 addFullprintItem();
 </script>
-
-  <!-- QUOTES LIST SECTION -->
-  <div id="tabQuotesContent" class="hidden">
-    <div class="card">
-      <h2 style="margin-top:0">📋 Moje wyceny</h2>
-      <div class="row" style="margin-bottom:12px;">
-        <div class="col">
-          <label>Filtruj status</label>
-          <select id="quoteFilter" onchange="loadQuotes()">
-            <option value="all">Wszystkie</option>
-            <option value="draft">Robocze</option>
-            <option value="sent">Wysłane</option>
-            <option value="waiting">Czekające</option>
-            <option value="expired">Przeterminowane</option>
-            <option value="responded">Odpowiedziane</option>
-            <option value="won">Wygrane</option>
-            <option value="lost">Przegrane</option>
-          </select>
-        </div>
-        <div class="col">
-          <label>&nbsp;</label>
-          <button class="btn-primary" onclick="loadQuotes()">🔄 Odśwież</button>
-        </div>
-      </div>
-      <div id="quotesList" style="overflow-x:auto;">
-        <p class="status info">Zaloguj się, aby zobaczyć wyceny.</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- FEEDBACK SECTION -->
-  <div id="tabFeedbackContent" class="hidden">
-    <div class="card">
-      <h2 style="margin-top:0">💬 Feedback — Udoskonalmy kalkulator</h2>
-      <p style="color:#666;font-size:0.9rem;">Zgłoś błąd, zaproponuj funkcję lub zostaw komentarz.</p>
-      <div class="row" style="gap:12px;margin-top:12px;">
-        <div class="col">
-          <label>Kategoria</label>
-          <select id="fbCategory">
-            <option value="general">Ogólne</option>
-            <option value="bug">Błąd</option>
-            <option value="feature">Propozycja funkcji</option>
-          </select>
-        </div>
-        <div class="col-full">
-          <label>Twój komentarz</label>
-          <textarea id="fbContent" rows="3" placeholder="Co chcesz zgłosić?"></textarea>
-        </div>
-      </div>
-      <div class="actions">
-        <button class="btn-primary" onclick="submitFeedback()">Wyślij feedback</button>
-      </div>
-      <div id="fbStatus"></div>
-      <div id="fbList" style="margin-top:20px;">
-        <p style="color:#666;font-size:0.9rem;">Zaloguj się, aby zobaczyć wszystkie komentarze.</p>
-      </div>
-    </div>
-  </div>
-
 </body>
 </html>
