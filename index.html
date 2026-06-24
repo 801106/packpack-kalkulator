@@ -846,7 +846,10 @@ function addFullprintItem(data) {
       <div class="field"><label>Ilość</label><input type="number" min="1" class="fp-qty" value="${data && data.qty ? data.qty : 500}"></div>
       <div class="field"><label>Uwagi do QUOTE</label><input type="text" class="fp-notes" placeholder="np. CMYK, mat"></div>
     </div>
-    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;">${optionsHtml}</div>`;
+    <div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);">
+      <label style="font-size:0.8rem;color:#666;display:block;margin-bottom:6px;">Opcje dodatkowe:</label>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;">${optionsHtml}</div>
+    </div>`;
   container.appendChild(div); if (data && data.material) div.querySelector('.fp-material').value = data.material; if (data && data.size) div.querySelector('.fp-size').value = data.size; updateFpPrice(id);
 }
 function updateFpMaterial(id) { const card = document.querySelector(`#fp-item-${id}`); if (!card) return; const mat = card.querySelector('.fp-material').value; const sizeSelect = card.querySelector('.fp-size'); const sizes = fullprintSizesPerMaterial[mat] || []; sizeSelect.innerHTML = sizes.map(s => `<option value="${s}">${s}</option>`).join(''); updateFpPrice(id); }
