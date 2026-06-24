@@ -399,7 +399,7 @@
         <div class="rates">
           <div class="field"><label>USD/PLN</label><input type="number" step="0.01" id="rateUsd" value="4.05"></div>
           <div class="field"><label>EUR/PLN</label><input type="number" step="0.01" id="rateEur" value="4.35"></div>
-          <button class="btn-secondary btn-small" onclick="fetchNbp()">NBP</button>
+          <span id="rateStatus" style="font-size:0.75rem;color:#666;align-self:center;">Pobieranie...</span>
         </div>
       </div>
 
@@ -1206,7 +1206,7 @@ function detectForeign(text) { const t = text.toLowerCase(); return /\b(germany|
 function showStatus(context, msg, type) { if (context === 'fullprint') { document.getElementById('fullprintResults').innerHTML = `<div class="status ${type}">${msg}</div>`; return; } if (context === 'overprint') { document.getElementById('overprintResults').innerHTML = `<div class="status ${type}">${msg}</div>`; return; } const s = document.getElementById('mailStatus'); s.className = 'status ' + type; s.textContent = msg; s.classList.remove('hidden'); }
 function clearStatus(context) { if (context === 'mail') { const s = document.getElementById('mailStatus'); s.className = 'status hidden'; s.textContent = ''; } }
 function clearMail() { document.getElementById('mailInput').value = ''; clearStatus('mail'); }
-function fetchNbp() { fetch('https://api.nbp.pl/api/exchangerates/tables/A/?format=json').then(r => r.json()).then(data => { const rates = data[0].rates; const usd = rates.find(r => r.code === 'USD'); const eur = rates.find(r => r.code === 'EUR'); if (usd) document.getElementById('rateUsd').value = usd.mid.toFixed(4); if (eur) document.getElementById('rateEur').value = eur.mid.toFixed(4); showStatus('mail','Kursy NBP pobrane.','ok'); }).catch(() => { showStatus('mail','Nie udało się pobrać z NBP.','err'); }); }
+function fetchNbp() { fetch('https://api.nbp.pl/api/exchangerates/tables/A/?format=json').then(r => r.json()).then(data => { const rates = data[0].rates; const usd = rates.find(r => r.code === 'USD'); const eur = rates.find(r => r.code === 'EUR'); if (usd) document.getElementById('rateUsd').value = usd.mid.toFixed(4); if (eur) document.getElementById('rateEur').value = eur.mid.toFixed(4); const statusEl = document.getElementById('rateStatus'); if (statusEl) statusEl.textContent = 'NBP ' + new Date().toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit'}); }).catch(() => { const statusEl = document.getElementById('rateStatus'); if (statusEl) statusEl.textContent = 'Offline (domyślne)'; }); }
 
 /* ==================== DRUKOWANIE / PDF ==================== */
 function printResults(pmode) {
@@ -1622,6 +1622,7 @@ function removeManualItem(idx) {
 
 /* ==================== INICJALIZACJA ==================== */
 initSupabase();
+fetchNbp();
 addOverprintItem();
 addFullprintItem();
 </script>
