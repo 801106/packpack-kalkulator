@@ -577,7 +577,7 @@ function getOverprintProductPrice(product, size, qty) {
 }
 
 function getOverprintPrintPrice(size, printType, qty) {
-  const prefix = 'overprint_print:' + size + ':' + size + ':';
+  const prefix = 'overprint_print:null:' + size + ':';
   let best = null, bestPrice = 0;
   for (const key in priceCache) {
     if (!key.startsWith(prefix)) continue;
