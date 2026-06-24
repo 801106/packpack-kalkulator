@@ -432,6 +432,10 @@
             <label>Telefon</label>
             <input type="tel" id="clientPhone" placeholder="+48 123 456 789">
           </div>
+          <div class="field" style="flex:1;min-width:150px;">
+            <label>Ref. ręczny (okres przejściowy)</label>
+            <input type="text" id="manualRef" placeholder="np. FR-MARTIN-001">
+          </div>
         </div>
       </div>
 
@@ -471,8 +475,7 @@
         <h3 style="font-size:0.95rem;margin-top:16px;">QUOTE do kontrahenta</h3>
         <textarea id="quoteOutput" class="quote-box" readonly placeholder="Kliknij 'Generuj QUOTE'..." style="min-height:140px"></textarea>
         <div class="actions">
-          <button class="btn-primary btn-small" onclick="generateQuote()">Generuj PL</button>
-          <button class="btn-primary btn-small" onclick="generateQuoteEnEur()">Generuj EN + EUR</button>
+          <button class="btn-primary btn-small" onclick="generateQuote()">Generuj QUOTE</button>
           <button class="btn-secondary btn-small" onclick="copyQuote()">Kopiuj</button>
         </div>
 
@@ -984,10 +987,15 @@ function generateQuote() {
   
   const mailData = parseMailInput();
   const clientName = document.getElementById('clientName').value.trim() || mailData.clientName || 'Klient';
+  const manualRef = document.getElementById('manualRef').value.trim();
   const refNum = 'PP-' + new Date().toISOString().slice(0,10).replace(/-/g, '');
   
   let lines = [];
-  lines.push('QUOTE #' + refNum + ' ' + clientName.toUpperCase());
+  if (manualRef) {
+    lines.push('QUOTE #' + refNum + ' / ' + manualRef + ' ' + clientName.toUpperCase());
+  } else {
+    lines.push('QUOTE #' + refNum + ' ' + clientName.toUpperCase());
+  }
   lines.push('');
   
   let missingInfo = [];
