@@ -918,36 +918,153 @@ function calcFullprint() {
   document.getElementById('fullprintPrintActions').style.display = 'flex';
 }
 
-/* ==================== TERESOMATY ==================== */
+/* ==================== TERESOMATY / QUOTE TO CONTRACTOR ==================== */
+function mapMaterialToStandard(material) {
+  const map = {
+    "PET 12/PE 70-100": "PET / PE",
+    "PET 12/ALU 7/PE 80-90": "PET / ALU / PE",
+    "PET 12/PE 128 (Flat bottom)": "PET / PE",
+    "Papier Kraft": "Kraft / ALU / PE",
+    "PAP/PET/CPP": "PAP / PET / CPP",
+    "PET/AL/PE Flat bottom + wentyl": "PET / ALU / PE",
+    "PET/AL/PE Flat bottom": "PET / ALU / PE"
+  };
+  return map[material] || material;
+}
+
+function mapMaterialToPouchType(material) {
+  if (material.includes('Flat bottom')) return 'flat bottom';
+  return 'doypack';
+}
+
+function mapOptionsToExtras(options) {
+  if (!options) return '';
+  const extras = [];
+  if (options.round_corners) extras.push('rounded corners');
+  if (options.zip_lock || options.open_zip) extras.push('ziplock');
+  if (options.tear_notch) extras.push('tear notch');
+  if (options.coffee_valve) extras.push('valve');
+  if (options.hot_foil) extras.push('hot stamping gold');
+  if (options.euro_hanger || options.euro_hole) extras.push('euro hole');
+  // metallized, holographic, soft_touch are finishes, not extras
+  return extras.join(' / ') || '—';
+}
+
+function mapFinish(finish, options) {
+  if (!options) options = {};
+  if (options.holographic) return 'holographic finish';
+  if (options.soft_touch) return 'soft touch';
+  return finish === 'glossy' ? 'glossy' : 'matt';
+}
+
+function parseMailInput() {
+  const text = document.getElementById('mailInput').value.trim().toLowerCase();
+  const result = { clientName: '', hasFullprint: false, hasDigital: false, hasFlexo: false, isCoffee: false, isMono: false, isRecyclable: false };
+  
+  // Client name - first word or line
+  const firstLine = document.getElementById('mailInput').value.trim().split('\n')[0];
+  if (firstLine) result.clientName = firstLine.split(/[,\s]/)[0].trim() || '';
+  
+  // Printing type
+  if (text.includes('fullprint')) result.hasFullprint = true;
+  if (text.includes('digital')) result.hasDigital = true;
+  if (text.includes('flexo')) result.hasFlexo = true;
+  
+  // Special requests
+  if (text.includes('coffee') || text.includes('kawa')) result.isCoffee = true;
+  if (text.includes('mono') || text.includes('monomaterial')) result.isMono = true;
+  if (text.includes('recycl') || text.includes('recycling')) result.isRecyclable = true;
+  
+  return result;
+}
+
 function generateQuote() {
   const cards = document.querySelectorAll('#fullprintItems .item-card');
   if (!cards.length) { showStatus('fullprint','Dodaj pozycje fullprint.','err'); return; }
-  const isForeign = detectForeign(document.getElementById('mailInput').value);
+  
+  const mailData = parseMailInput();
+  const clientName = document.getElementById('clientName').value.trim() || mailData.clientName || 'Klient';
+  const refNum = 'PP-' + new Date().toISOString().slice(0,10).replace(/-/g, '');
+  
   let lines = [];
-  lines.push('Dzień dobry,'); lines.push('');
-  lines.push('Proszę o wycenę:'); lines.push('');
+  lines.push('QUOTE #' + refNum + ' ' + clientName.toUpperCase());
+  lines.push('');
+  
+  let missingInfo = [];
+  let totalQty = 0;
+  
   cards.forEach((card, idx) => {
     const material = card.querySelector('.fp-material').value;
     const size = card.querySelector('.fp-size').value;
     const finish = card.querySelector('.fp-finish').value;
-    const qty = card.querySelector('.fp-qty').value;
-    const notes = card.querySelector('.fp-notes').value || 'CMYK, standard';
-    const optLabels = [];
-    card.querySelectorAll('.fp-opt:checked').forEach(cb => {
-      const optDef = fullprintOptions.find(o => o.id === cb.dataset.opt);
-      if (optDef) optLabels.push(optDef.label);
-    });
-    lines.push(`${idx+1}. ${material} — ${size} — ${finish === 'glossy' ? 'Glossy' : 'Matt'} — ${qty} szt`);
-    lines.push(`   Nadruk: ${notes}`);
-    if (optLabels.length) lines.push(`   Opcje: ${optLabels.join(', ')}`);
+    const qty = parseInt(card.querySelector('.fp-qty').value, 10) || 0;
+    totalQty += qty;
+    
+    const options = {};
+    card.querySelectorAll('.fp-opt:checked').forEach(cb => { options[cb.dataset.opt] = true; });
+    
+    // Auto-add coffee features
+    if (mailData.isCoffee) {
+      if (!options.coffee_valve) options.coffee_valve = true;
+      if (!options.zip_lock) options.zip_lock = true;
+    }
+    
+    const pouchType = mapMaterialToPouchType(material);
+    const stdMaterial = mapMaterialToStandard(material);
+    
+    // Determine printing
+    let printing = 'fullprint';
+    if (mailData.hasDigital) printing = 'digital print, fullprint';
+    if (mailData.hasFlexo) printing = 'flexo print, fullprint';
+    
+    // Mono-material override
+    let finalMaterial = stdMaterial;
+    if (mailData.isMono || mailData.isRecyclable) {
+      finalMaterial = 'PE / PE';
+    }
+    
+    const extras = mapOptionsToExtras(options);
+    const finalFinish = mapFinish(finish, options);
+    
+    lines.push('Pouch type: ' + pouchType);
+    lines.push('Printing: ' + printing);
+    lines.push('Size: ' + size);
+    lines.push('Material: ' + finalMaterial);
+    lines.push('Extras: ' + extras);
+    lines.push('Finish: ' + finalFinish);
     lines.push('');
+    
+    // Check for missing info
+    if (!size) missingInfo.push('dimensions');
+    if (!material) missingInfo.push('material');
   });
-  lines.push('Dostawa: EXW / DDP');
-  lines.push('Płatność: przelew 14 dni');
-  if (isForeign) lines.push('Uwaga: klient zagraniczny — wymagana cena EUR.');
-  lines.push(''); lines.push('Pozdrawiam,'); lines.push('PackPack.pl');
+  
+  lines.push('Total quantity: ' + totalQty + ' pcs');
+  lines.push('');
+  
+  // If missing info, generate follow-up instead
+  if (missingInfo.length) {
+    const uniqueMissing = [...new Set(missingInfo)];
+    lines.push('——————————————————————————————————');
+    lines.push('FOLLOW-UP EMAIL TO CUSTOMER');
+    lines.push('——————————————————————————————————');
+    lines.push('');
+    lines.push('Dear ' + clientName + ',');
+    lines.push('');
+    lines.push('Thank you for your inquiry. To prepare an accurate quotation, we need the following information:');
+    lines.push('');
+    if (uniqueMissing.includes('dimensions')) lines.push('• Dimensions (width x height) or volume');
+    if (uniqueMissing.includes('material')) lines.push('• Material structure or preferred barrier properties');
+    lines.push('• Artwork visualization or print design');
+    lines.push('');
+    lines.push('Please reply with the missing details so we can proceed.');
+    lines.push('');
+    lines.push('Best regards,');
+    lines.push('PackPack.pl');
+  }
+  
   document.getElementById('quoteOutput').value = lines.join('\n');
-  showStatus('fullprint','QUOTE PL wygenerowane.','ok');
+  showStatus('fullprint','QUOTE do kontrahenta wygenerowane.','ok');
 }
 
 async function generateQuoteEnEur() {
