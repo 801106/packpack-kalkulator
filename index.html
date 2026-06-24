@@ -186,8 +186,7 @@
   .status.ok { background: #e8f5e9; color: #2e7d32; }
   .status.err { background: #ffebee; color: #c62828; }
   .status.info { background: #e3f2fd; color: #1565c0; }
-  #pageLanding { display: none !important; }
-  #pageCalculator { display: block !important; }
+  .hidden { display: none !important; }
   .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
   /* Landing page */
   #pageLanding {
@@ -591,37 +590,34 @@ function getOverprintPrintPrice(size, printType, qty) {
 }
 
 const fullprintOptions = [
-  { id: 'round_corners', label: 'Zaokrąglone rogi', labelEn: 'Rounded corners' },
-  { id: 'zip_lock', label: 'Struna (zip lock)', labelEn: 'Zip lock' },
-  { id: 'tear_notch', label: 'Nacinnik (tear notch)', labelEn: 'Tear notch' },
-  { id: 'metallized', label: 'Metaliza', labelEn: 'Metallized' },
-  { id: 'holographic', label: 'Holografic effect', labelEn: 'Holographic effect' },
-  { id: 'soft_touch', label: 'Soft touch', labelEn: 'Soft touch' },
-  { id: 'coffee_valve', label: 'Wentyl do kawy', labelEn: 'Coffee valve' },
-  { id: 'hot_foil', label: 'Hot foil', labelEn: 'Hot foil' },
-  { id: 'euro_hanger', label: 'Eurozawieszka', labelEn: 'Euro hanger' },
-  { id: 'euro_hole', label: 'Eurodziurka', labelEn: 'Euro hole' },
-  { id: 'open_zip', label: 'Otwarta struna', labelEn: 'Open zip' }
+  { id: 'round_corners', label: 'Zaokrąglone rogi', labelEn: 'Rounded corners', surcharge: 0 },
+  { id: 'zip_lock', label: 'Struna (zip lock)', labelEn: 'Zip lock', surcharge: 0 },
+  { id: 'tear_notch', label: 'Nacinnik (tear notch)', labelEn: 'Tear notch', surcharge: 0 },
+  { id: 'metallized', label: 'Metaliza', labelEn: 'Metallized', surcharge: 0 },
+  { id: 'holographic', label: 'Holografic effect', labelEn: 'Holographic effect', surcharge: 0 },
+  { id: 'soft_touch', label: 'Soft touch', labelEn: 'Soft touch', surcharge: 0 },
+  { id: 'coffee_valve', label: 'Wentyl do kawy', labelEn: 'Coffee valve', surcharge: 0.40 },
+  { id: 'hot_foil', label: 'Hot foil', labelEn: 'Hot foil', surcharge: 0 },
+  { id: 'euro_hanger', label: 'Eurozawieszka', labelEn: 'Euro hanger', surcharge: 0 },
+  { id: 'euro_hole', label: 'Eurodziurka', labelEn: 'Euro hole', surcharge: 0 },
+  { id: 'open_zip', label: 'Otwarta struna', labelEn: 'Open zip', surcharge: 0 }
+];
+const fullprintMargins = [
+  { min: 0, max: 499, val: 1.00 }, { min: 500, max: 999, val: 1.00 },
+  { min: 1000, max: 4999, val: 0.90 }, { min: 5000, max: 9999, val: 0.80 },
+  { min: 10000, max: 14999, val: 0.70 }, { min: 15000, max: 19999, val: 0.65 },
+  { min: 20000, max: 49999, val: 0.60 },
+  { min: 50000, max: 99999, val: 0.40 }, { min: 100000, max: Infinity, val: 0.30 }
 ];
 function getFullprintMargin(material, qty) {
-  const prefix = 'margin:null:null:';
-  let best = null, bestVal = 0;
-  for (const key in priceCache) {
-    if (!key.startsWith(prefix)) continue;
-    const parts = key.split(':');
-    const threshold = parseInt(parts[3]);
-    if (threshold <= qty && (!best || threshold > parseInt(best.split(':')[3]))) { best = key; bestVal = priceCache[key]; }
-  }
-  return bestVal;
+  for (const t of fullprintMargins) { if (qty >= t.min && qty <= t.max) return t.val; }
+  return 0;
 }
 function getFullprintOptionsSurcharge(options) {
   if (!options) return 0;
   let total = 0;
-  for (const id in options) {
-    if (options[id]) {
-      const key = 'option:' + id + ':null:0:';
-      total += (priceCache[key] || 0);
-    }
+  for (const opt of fullprintOptions) {
+    if (options[opt.id]) total += opt.surcharge;
   }
   return total;
 }
@@ -1077,11 +1073,11 @@ let supabaseClient = null; let currentUser = null;
 function initSupabase() { if (typeof window.supabase === 'undefined') { setTimeout(initSupabase, 500); return; } supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); initAuth(); }
 async function initAuth() { try { const { data: { session } } = await supabaseClient.auth.getSession(); if (session?.user) { currentUser = session.user; showLoggedIn(session.user.email); } else { showLoggedOut(); } } catch (e) { showLoggedOut(); } supabaseClient.auth.onAuthStateChange((event, session) => { if (session?.user) { currentUser = session.user; showLoggedIn(session.user.email); } else { currentUser = null; showLoggedOut(); } }); }
 function showLoggedIn(email) { document.getElementById('authLoggedOut').style.display = 'none'; document.getElementById('authLoggedIn').style.display = 'block'; document.getElementById('authUserName').textContent = email; const clientSection = document.getElementById('clientDataSection'); if (clientSection) clientSection.style.display = 'block'; showPage('calculator'); openSidebar(); loadQuotes(); }
-function showLoggedOut() { document.getElementById('authLoggedOut').style.display = 'block'; document.getElementById('authLoggedIn').style.display = 'none'; document.getElementById('showQuotesBtn').style.display = 'inline-flex'; const clientSection = document.getElementById('clientDataSection'); if (clientSection) clientSection.style.display = 'none'; closeSidebar(); }
+function showLoggedOut() { document.getElementById('authLoggedOut').style.display = 'block'; document.getElementById('authLoggedIn').style.display = 'none'; document.getElementById('showQuotesBtn').style.display = 'inline-flex'; const clientSection = document.getElementById('clientDataSection'); if (clientSection) clientSection.style.display = 'none'; closeSidebar(); showPage('landing'); }
 async function signIn() { const email = document.getElementById('authEmail').value.trim(); const password = document.getElementById('authPassword').value; const statusEl = document.getElementById('authStatus'); if (!email || !password) { statusEl.innerHTML = '<span class="status err">Wypełnij email i hasło.</span>'; return; } try { const { error } = await supabaseClient.auth.signInWithPassword({ email, password }); if (error) statusEl.innerHTML = '<span class="status err">' + error.message + '</span>'; else statusEl.innerHTML = '<span class="status ok">Zalogowano!</span>'; } catch (e) { statusEl.innerHTML = '<span class="status err">Błąd: ' + e.message + '</span>'; } }
 async function signUp() { const email = document.getElementById('authEmail').value.trim(); const password = document.getElementById('authPassword').value; const statusEl = document.getElementById('authStatus'); if (!email || !password) { statusEl.innerHTML = '<span class="status err">Wypełnij email i hasło.</span>'; return; } if (password.length < 6) { statusEl.innerHTML = '<span class="status err">Hasło min. 6 znaków.</span>'; return; } try { const { error } = await supabaseClient.auth.signUp({ email, password }); if (error) statusEl.innerHTML = '<span class="status err">' + error.message + '</span>'; else statusEl.innerHTML = '<span class="status ok">Konto utworzone! Sprawdź email.</span>'; } catch (e) { statusEl.innerHTML = '<span class="status err">Błąd: ' + e.message + '</span>'; } }
 async function signOut() { try { await supabaseClient.auth.signOut(); } catch (e) {} document.getElementById('authStatus').innerHTML = ''; }
-async function landingSignIn() { const email = document.getElementById('landingEmail').value.trim(); const password = document.getElementById('landingPassword').value; const statusEl = document.getElementById('landingAuthStatus'); if (!email || !password) { statusEl.innerHTML = '<span class="status err">Wypełnij email i hasło.</span>'; return; } try { const { error } = await supabaseClient.auth.signInWithPassword({ email, password }); if (error) statusEl.innerHTML = '<span class="status err">' + error.message + '</span>'; else { statusEl.innerHTML = '<span class="status ok">Zalogowano!</span>'; showPage('calculator'); openSidebar(); loadPrices(); } } catch (e) { statusEl.innerHTML = '<span class="status err">Błąd: ' + e.message + '</span>'; } }
+async function landingSignIn() { const email = document.getElementById('landingEmail').value.trim(); const password = document.getElementById('landingPassword').value; const statusEl = document.getElementById('landingAuthStatus'); if (!email || !password) { statusEl.innerHTML = '<span class="status err">Wypełnij email i hasło.</span>'; return; } try { const { error } = await supabaseClient.auth.signInWithPassword({ email, password }); if (error) statusEl.innerHTML = '<span class="status err">' + error.message + '</span>'; else statusEl.innerHTML = '<span class="status ok">Zalogowano!</span>'; } catch (e) { statusEl.innerHTML = '<span class="status err">Błąd: ' + e.message + '</span>'; } }
 async function landingSignUp() { const email = document.getElementById('landingEmail').value.trim(); const password = document.getElementById('landingPassword').value; const statusEl = document.getElementById('landingAuthStatus'); if (!email || !password) { statusEl.innerHTML = '<span class="status err">Wypełnij email i hasło.</span>'; return; } if (password.length < 6) { statusEl.innerHTML = '<span class="status err">Hasło min. 6 znaków.</span>'; return; } try { const { error } = await supabaseClient.auth.signUp({ email, password }); if (error) statusEl.innerHTML = '<span class="status err">' + error.message + '</span>'; else statusEl.innerHTML = '<span class="status ok">Konto utworzone! Sprawdź email.</span>'; } catch (e) { statusEl.innerHTML = '<span class="status err">Błąd: ' + e.message + '</span>'; } }
 async function saveQuote() {
   if (!currentUser) { alert('Zaloguj się, aby zapisać wycenę.'); return; }
@@ -1365,8 +1361,9 @@ function addManualQuote() {
   let surcharge = 0;
   document.querySelectorAll('#manualOptions input[type="checkbox"]:checked').forEach(cb => {
     options[cb.dataset.opt] = true;
+    const optDef = fullprintOptions.find(o => o.id === cb.dataset.opt);
+    if (optDef) surcharge += optDef.surcharge;
   });
-  const surcharge = getFullprintOptionsSurcharge(options);
   if (!material || !size || qty <= 0 || price <= 0) {
     alert('Wypełnij materiał, rozmiar, ilość i cenę zakupu.');
     return;
@@ -1410,7 +1407,6 @@ loadPrices();
 fetchNbp();
 addOverprintItem();
 addFullprintItem();
-showPage('calculator');
 </script>
   <div id="manualQuoteModal" class="modal-overlay" style="display:none;">
     <div class="modal-box" style="max-width:500px;">
