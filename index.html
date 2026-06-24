@@ -590,34 +590,37 @@ function getOverprintPrintPrice(size, printType, qty) {
 }
 
 const fullprintOptions = [
-  { id: 'round_corners', label: 'Zaokrąglone rogi', labelEn: 'Rounded corners', surcharge: 0 },
-  { id: 'zip_lock', label: 'Struna (zip lock)', labelEn: 'Zip lock', surcharge: 0 },
-  { id: 'tear_notch', label: 'Nacinnik (tear notch)', labelEn: 'Tear notch', surcharge: 0 },
-  { id: 'metallized', label: 'Metaliza', labelEn: 'Metallized', surcharge: 0 },
-  { id: 'holographic', label: 'Holografic effect', labelEn: 'Holographic effect', surcharge: 0 },
-  { id: 'soft_touch', label: 'Soft touch', labelEn: 'Soft touch', surcharge: 0 },
-  { id: 'coffee_valve', label: 'Wentyl do kawy', labelEn: 'Coffee valve', surcharge: 0.40 },
-  { id: 'hot_foil', label: 'Hot foil', labelEn: 'Hot foil', surcharge: 0 },
-  { id: 'euro_hanger', label: 'Eurozawieszka', labelEn: 'Euro hanger', surcharge: 0 },
-  { id: 'euro_hole', label: 'Eurodziurka', labelEn: 'Euro hole', surcharge: 0 },
-  { id: 'open_zip', label: 'Otwarta struna', labelEn: 'Open zip', surcharge: 0 }
-];
-const fullprintMargins = [
-  { min: 0, max: 499, val: 1.00 }, { min: 500, max: 999, val: 1.00 },
-  { min: 1000, max: 4999, val: 0.90 }, { min: 5000, max: 9999, val: 0.80 },
-  { min: 10000, max: 14999, val: 0.70 }, { min: 15000, max: 19999, val: 0.65 },
-  { min: 20000, max: 49999, val: 0.60 },
-  { min: 50000, max: 99999, val: 0.40 }, { min: 100000, max: Infinity, val: 0.30 }
+  { id: 'round_corners', label: 'Zaokrąglone rogi', labelEn: 'Rounded corners' },
+  { id: 'zip_lock', label: 'Struna (zip lock)', labelEn: 'Zip lock' },
+  { id: 'tear_notch', label: 'Nacinnik (tear notch)', labelEn: 'Tear notch' },
+  { id: 'metallized', label: 'Metaliza', labelEn: 'Metallized' },
+  { id: 'holographic', label: 'Holografic effect', labelEn: 'Holographic effect' },
+  { id: 'soft_touch', label: 'Soft touch', labelEn: 'Soft touch' },
+  { id: 'coffee_valve', label: 'Wentyl do kawy', labelEn: 'Coffee valve' },
+  { id: 'hot_foil', label: 'Hot foil', labelEn: 'Hot foil' },
+  { id: 'euro_hanger', label: 'Eurozawieszka', labelEn: 'Euro hanger' },
+  { id: 'euro_hole', label: 'Eurodziurka', labelEn: 'Euro hole' },
+  { id: 'open_zip', label: 'Otwarta struna', labelEn: 'Open zip' }
 ];
 function getFullprintMargin(material, qty) {
-  for (const t of fullprintMargins) { if (qty >= t.min && qty <= t.max) return t.val; }
-  return 0;
+  const prefix = 'margin:null:null:';
+  let best = null, bestVal = 0;
+  for (const key in priceCache) {
+    if (!key.startsWith(prefix)) continue;
+    const parts = key.split(':');
+    const threshold = parseInt(parts[3]);
+    if (threshold <= qty && (!best || threshold > parseInt(best.split(':')[3]))) { best = key; bestVal = priceCache[key]; }
+  }
+  return bestVal;
 }
 function getFullprintOptionsSurcharge(options) {
   if (!options) return 0;
   let total = 0;
-  for (const opt of fullprintOptions) {
-    if (options[opt.id]) total += opt.surcharge;
+  for (const id in options) {
+    if (options[id]) {
+      const key = 'option:' + id + ':null:0:';
+      total += (priceCache[key] || 0);
+    }
   }
   return total;
 }
@@ -1361,9 +1364,8 @@ function addManualQuote() {
   let surcharge = 0;
   document.querySelectorAll('#manualOptions input[type="checkbox"]:checked').forEach(cb => {
     options[cb.dataset.opt] = true;
-    const optDef = fullprintOptions.find(o => o.id === cb.dataset.opt);
-    if (optDef) surcharge += optDef.surcharge;
   });
+  const surcharge = getFullprintOptionsSurcharge(options);
   if (!material || !size || qty <= 0 || price <= 0) {
     alert('Wypełnij materiał, rozmiar, ilość i cenę zakupu.');
     return;
