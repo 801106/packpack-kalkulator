@@ -646,25 +646,25 @@ const overprintPrintPrices = {
 };
 
 const fullprintMaterials = [
-  "PET 12/PE 70-100",
-  "PET 12/ALU 7/PE 80-90",
-  "PET 12/PE 128 (Flat bottom)",
-  "Papier Kraft",
-  "PAP/PET/CPP",
-  "PET/AL/PE Flat bottom + wentyl",
-  "PET/AL/PE Flat bottom"
+  "Doypack PET 12/PE 70-100 - foliowy",
+  "Doypack PET 12/ALU 7/PE 80-90 - foliowy z aluminium",
+  "Doypack PAP / AL7 / PE80 - papier z aluminium",
+  "Doypack PAP /PET12 /CPP - papier z folią",
+  "Flat bottom PET 12/PE 128 - foliowy",
+  "Flat Bottom PET/AL/PE  - aluminium + wentyl",
+  "Flat bottom PET/AL/PE Flat bottom - aluminium  (bez wentyla)"
 ];
 const fullprintSizesPerMaterial = {
-  "PET 12/PE 70-100": ["100ml","250ml","500ml","750ml","1000ml","2000ml","3000ml"],
-  "PET 12/ALU 7/PE 80-90": ["100ml","250ml","500ml","750ml","1000ml","2000ml","3000ml"],
-  "PET 12/PE 128 (Flat bottom)": ["5000ml"],
-  "Papier Kraft": ["100ml","250ml","500ml","750ml","1000ml","2000ml","3000ml"],
-  "PAP/PET/CPP": ["100ml","250ml","500ml","750ml","1000ml","2000ml","3000ml"],
-  "PET/AL/PE Flat bottom + wentyl": ["500ml","1000ml","2000ml","3000ml","5000ml"],
-  "PET/AL/PE Flat bottom": ["500ml","1000ml","2000ml","3000ml","5000ml"]
+  "Doypack PET 12/PE 70-100 - foliowy": ["100ml","250ml","500ml","750ml","1000ml","2000ml","3000ml"],
+  "Doypack PET 12/ALU 7/PE 80-90 - foliowy z aluminium": ["100ml","250ml","500ml","750ml","1000ml","2000ml","3000ml"],
+  "Flat bottom PET 12/PE 128 - foliowy": ["5000ml"],
+  "Doypack PAP / AL7 / PE80 - papier z aluminium": ["100ml","250ml","500ml","750ml","1000ml","2000ml","3000ml"],
+  "Doypack PAP /PET12 /CPP - papier z folią": ["100ml","250ml","500ml","750ml","1000ml","2000ml","3000ml"],
+  "Flat Bottom PET/AL/PE  - aluminium + wentyl": ["500ml","1000ml","2000ml","3000ml","5000ml"],
+  "Flat bottom PET/AL/PE Flat bottom - aluminium  (bez wentyla)": ["500ml","1000ml","2000ml","3000ml","5000ml"]
 };
 const fullprintPrices = {
-  "PET 12/PE 70-100": {
+  "Doypack PET 12/PE 70-100 - foliowy": {
     "100ml": { 500: 3.90, 1000: 2.24, 5000: 1.40, 10000: 1.20, 15000: 1.06, 20000: 0.94, 50000: 0.64, 100000: 0.54 },
     "250ml": { 500: 3.90, 1000: 2.45, 5000: 1.65, 10000: 1.41, 15000: 1.25, 20000: 1.13, 50000: 0.83, 100000: 0.73 },
     "500ml": { 500: 3.90, 1000: 2.47, 5000: 1.73, 10000: 1.48, 15000: 1.36, 20000: 1.24, 50000: 0.94, 100000: 0.84 },
@@ -673,7 +673,7 @@ const fullprintPrices = {
     "2000ml": { 500: 3.93, 1000: 3.01, 5000: 2.14, 10000: 1.91, 15000: 1.81, 20000: 1.76, 50000: 1.66, 100000: 1.56 },
     "3000ml": { 500: 4.93, 1000: 3.75, 5000: 2.60, 10000: 2.41, 15000: 2.29, 20000: 2.27, 50000: 2.17, 100000: 2.07 }
   },
-  "PET 12/ALU 7/PE 80-90": {
+  "Doypack PET 12/ALU 7/PE 80-90 - foliowy z aluminium": {
     "100ml": { 500: 3.90, 1000: 2.45, 5000: 1.56, 10000: 1.36, 15000: 1.20, 20000: 1.07, 50000: 0.64, 100000: 0.54 },
     "250ml": { 500: 3.90, 1000: 2.82, 5000: 1.92, 10000: 1.62, 15000: 1.47, 20000: 1.34, 50000: 0.83, 100000: 0.73 },
     "500ml": { 500: 3.97, 1000: 2.85, 5000: 2.10, 10000: 1.81, 15000: 1.67, 20000: 1.61, 50000: 0.94, 100000: 0.84 },
@@ -682,10 +682,10 @@ const fullprintPrices = {
     "2000ml": { 500: 4.70, 1000: 3.82, 5000: 2.80, 10000: 2.52, 15000: 2.46, 20000: 2.39, 50000: 1.66, 100000: 1.56 },
     "3000ml": { 500: 6.41, 1000: 5.11, 5000: 3.51, 10000: 3.30, 15000: 3.19, 20000: 3.08, 50000: 2.17, 100000: 2.07 }
   },
-  "PET 12/PE 128 (Flat bottom)": {
+  "Flat bottom PET 12/PE 128 - foliowy": {
     "5000ml": { 500: 8.55, 1000: 7.33, 5000: 4.92, 10000: 3.92, 15000: 3.82, 20000: 3.72, 50000: 3.62, 100000: 3.52 }
   },
-  "Papier Kraft": {
+  "Doypack PAP / AL7 / PE80 - papier z aluminium": {
     "100ml": { 500: 4.20, 1000: 3.00, 5000: 2.10, 10000: 1.80, 15000: 1.65, 20000: 1.55, 50000: 1.35, 100000: 1.25 },
     "250ml": { 500: 4.40, 1000: 3.20, 5000: 2.30, 10000: 2.00, 15000: 1.85, 20000: 1.75, 50000: 1.55, 100000: 1.45 },
     "500ml": { 500: 4.60, 1000: 3.40, 5000: 2.50, 10000: 2.20, 15000: 2.05, 20000: 1.95, 50000: 1.75, 100000: 1.65 },
@@ -694,7 +694,7 @@ const fullprintPrices = {
     "2000ml": { 500: 5.80, 1000: 4.60, 5000: 3.70, 10000: 3.40, 15000: 3.25, 20000: 3.15, 50000: 2.95, 100000: 2.85 },
     "3000ml": { 500: 6.50, 1000: 5.30, 5000: 4.40, 10000: 4.10, 15000: 3.95, 20000: 3.85, 50000: 3.65, 100000: 3.55 }
   },
-  "PAP/PET/CPP": {
+  "Doypack PAP /PET12 /CPP - papier z folią": {
     "100ml": { 500: 3.80, 1000: 2.60, 5000: 1.70, 10000: 1.40, 15000: 1.25, 20000: 1.15, 50000: 0.95, 100000: 0.85 },
     "250ml": { 500: 4.00, 1000: 2.80, 5000: 1.90, 10000: 1.60, 15000: 1.45, 20000: 1.35, 50000: 1.15, 100000: 1.05 },
     "500ml": { 500: 4.20, 1000: 3.00, 5000: 2.10, 10000: 1.80, 15000: 1.65, 20000: 1.55, 50000: 1.35, 100000: 1.25 },
@@ -703,14 +703,14 @@ const fullprintPrices = {
     "2000ml": { 500: 5.40, 1000: 4.20, 5000: 3.30, 10000: 3.00, 15000: 2.85, 20000: 2.75, 50000: 2.55, 100000: 2.45 },
     "3000ml": { 500: 6.10, 1000: 4.90, 5000: 4.00, 10000: 3.70, 15000: 3.55, 20000: 3.45, 50000: 3.25, 100000: 3.15 }
   },
-  "PET/AL/PE Flat bottom + wentyl": {
+  "Flat Bottom PET/AL/PE  - aluminium + wentyl": {
     "500ml": { 500: 5.50, 1000: 4.30, 5000: 3.20, 10000: 2.90, 15000: 2.75, 20000: 2.65, 50000: 2.45, 100000: 2.35 },
     "1000ml": { 500: 5.80, 1000: 4.60, 5000: 3.50, 10000: 3.20, 15000: 3.05, 20000: 2.95, 50000: 2.75, 100000: 2.65 },
     "2000ml": { 500: 6.40, 1000: 5.20, 5000: 4.10, 10000: 3.80, 15000: 3.65, 20000: 3.55, 50000: 3.35, 100000: 3.25 },
     "3000ml": { 500: 7.10, 1000: 5.90, 5000: 4.80, 10000: 4.50, 15000: 4.35, 20000: 4.25, 50000: 4.05, 100000: 3.95 },
     "5000ml": { 500: 8.80, 1000: 7.60, 5000: 5.50, 10000: 4.80, 15000: 4.65, 20000: 4.55, 50000: 4.35, 100000: 4.25 }
   },
-  "PET/AL/PE Flat bottom": {
+  "Flat bottom PET/AL/PE Flat bottom - aluminium  (bez wentyla)": {
     "500ml": { 500: 5.10, 1000: 3.90, 5000: 2.80, 10000: 2.50, 15000: 2.35, 20000: 2.25, 50000: 2.05, 100000: 1.95 },
     "1000ml": { 500: 5.40, 1000: 4.20, 5000: 3.10, 10000: 2.80, 15000: 2.65, 20000: 2.55, 50000: 2.35, 100000: 2.25 },
     "2000ml": { 500: 6.00, 1000: 4.80, 5000: 3.70, 10000: 3.40, 15000: 3.25, 20000: 3.15, 50000: 2.95, 100000: 2.85 },
@@ -927,13 +927,13 @@ function calcFullprint() {
 /* ==================== TERESOMATY / QUOTE TO CONTRACTOR ==================== */
 function mapMaterialToStandard(material) {
   const map = {
-    "PET 12/PE 70-100": "PET / PE",
-    "PET 12/ALU 7/PE 80-90": "PET / ALU / PE",
-    "PET 12/PE 128 (Flat bottom)": "PET / PE",
-    "Papier Kraft": "Kraft / ALU / PE",
-    "PAP/PET/CPP": "PAP / PET / CPP",
-    "PET/AL/PE Flat bottom + wentyl": "PET / ALU / PE",
-    "PET/AL/PE Flat bottom": "PET / ALU / PE"
+    "Doypack PET 12/PE 70-100 - foliowy": "PET / PE",
+    "Doypack PET 12/ALU 7/PE 80-90 - foliowy z aluminium": "PET / ALU / PE",
+    "Flat bottom PET 12/PE 128 - foliowy": "PET / PE",
+    "Doypack PAP / AL7 / PE80 - papier z aluminium": "Kraft / ALU / PE",
+    "Doypack PAP /PET12 /CPP - papier z folią": "PAP / PET / CPP",
+    "Flat Bottom PET/AL/PE  - aluminium + wentyl": "PET / ALU / PE",
+    "Flat bottom PET/AL/PE Flat bottom - aluminium  (bez wentyla)": "PET / ALU / PE"
   };
   return map[material] || material;
 }
