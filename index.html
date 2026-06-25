@@ -28,7 +28,33 @@
     background-attachment: fixed;
     color: var(--text);
     height: 100vh;
-    overflow: hidden;
+    overflow-y: auto;
+  }
+  /* ========== LOADING SPINNER ========== */
+  .spinner-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(255,255,255,0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    backdrop-filter: blur(5px);
+  }
+  .spinner-overlay.hidden { display: none !important; }
+  .spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner-text {
+    margin-top: 16px;
+    color: var(--text);
+    font-size: 0.9rem;
   }
   /* ========== LAYOUT ========== */
   .app-layout {
@@ -311,6 +337,27 @@
     }
     .sidebar-right.collapsed { transform: none !important; height: 48px; }
   }
+  /* ========== MOBILE ========== */
+  @media (max-width: 768px) {
+    body { overflow-y: auto; }
+    .app-layout { flex-direction: column; height: auto; }
+    .main-column { width: 100%; min-width: auto; }
+    .app-header { flex-direction: column; align-items: flex-start; padding: 12px 16px; }
+    .card { padding: 16px; }
+    .row { flex-direction: column; }
+    .sidebar-right {
+      width: 100%;
+      min-width: auto;
+      position: relative;
+      height: auto;
+      border-left: none;
+      border-top: 1px solid var(--border);
+      transform: none !important;
+    }
+    .sidebar-right.collapsed { transform: none !important; height: 48px; }
+    .quote-list-item { padding: 10px 12px; }
+    .landing-card { margin: 16px; padding: 24px; }
+  }
 </style>
 </head>
 <body>
@@ -356,6 +403,12 @@
             </div>
           </div>
           <div id="landingAuthStatus" style="margin-top:10px;"></div>
+        </div>
+        <div id="loadingSpinner" class="spinner-overlay hidden">
+          <div style="text-align:center;">
+            <div class="spinner"></div>
+            <div class="spinner-text">Ładowanie cen...</div>
+          </div>
         </div>
       </div>
     </div>
@@ -549,6 +602,8 @@ let pricesLoaded = false;
 
 async function loadPrices() {
   if (pricesLoaded || !supabaseClient) return;
+  const spinner = document.getElementById('loadingSpinner');
+  if (spinner) spinner.classList.remove('hidden');
   try {
     const { data, error } = await supabaseClient.from('pp_prices').select('*');
     if (error || !data) { console.error('loadPrices error:', error); return; }
@@ -559,6 +614,7 @@ async function loadPrices() {
     pricesLoaded = true;
     console.log('Prices loaded:', Object.keys(priceCache).length);
   } catch (e) { console.error('loadPrices failed:', e); }
+  finally { if (spinner) spinner.classList.add('hidden'); }
 }
 
 function getFullprintPrice(material, size, qty) {
