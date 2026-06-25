@@ -20,7 +20,59 @@
     --shadow: 0 10px 40px rgba(0,0,0,0.1);
     --shadow-hover: 0 20px 60px rgba(0,0,0,0.15);
   }
-  * { box-sizing: border-box; }
+  html[data-theme="dark"] {
+    --bg: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+    --text: #e2e8f0;
+    --accent: #818cf8;
+    --accent-hover: #a5b4fc;
+    --card: rgba(30, 41, 59, 0.95);
+    --border: rgba(255,255,255,0.1);
+    --shadow: 0 10px 40px rgba(0,0,0,0.3);
+    --shadow-hover: 0 20px 60px rgba(0,0,0,0.4);
+  }
+  html[data-theme="dark"] .spinner-overlay {
+    background: rgba(15, 23, 42, 0.9);
+  }
+  html[data-theme="dark"] .app-header {
+    background: rgba(15, 23, 42, 0.8);
+  }
+  html[data-theme="dark"] .result-table th {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  }
+  /* ========== CUSTOM SCROLLBAR ========== */
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--accent-hover); }
+  /* ========== MICRO-ANIMATIONS ========== */
+  * { transition: background-color 0.2s, border-color 0.2s; }
+  .card, .item-card, .landing-card {
+    animation: fadeInUp 0.5s ease forwards;
+  }
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .btn-primary:active {
+    transform: translateY(0) scale(0.98);
+  }
+  .mode-toggle button.active {
+    position: relative;
+    overflow: hidden;
+  }
+  .mode-toggle button.active::after {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 0; height: 0;
+    background: rgba(255,255,255,0.2);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.3s, height 0.3s;
+  }
+  .mode-toggle button.active:hover::after {
+    width: 200px; height: 200px;
+  }
   body {
     margin: 0; padding: 0;
     font-family: 'Inter', sans-serif;
@@ -295,6 +347,9 @@
   }
   .quote-list-item { cursor: pointer; transition: background 0.15s; }
   .quote-list-item:hover { background: #f0f0f0; }
+  html[data-theme="dark"] .quote-list-item:hover { background: rgba(255,255,255,0.05); }
+  html[data-theme="dark"] .modal-box { background: var(--card); color: var(--text); }
+  html[data-theme="dark"] .modal-close { color: var(--text); }
   /* ========== MODAL ========== */
   .modal-overlay {
     position: fixed; top: 0; left: 0; right: 0; bottom: 0;
@@ -382,6 +437,7 @@
       </div>
       <button id="showQuotesBtn" class="btn-secondary btn-small" onclick="openSidebar()" style="display:inline-flex;white-space:nowrap;">◀ Moje wyceny</button>
       <button class="btn-secondary btn-small" onclick="showPage('feedback')" style="white-space:nowrap;">💬 Feedback</button>
+      <button id="darkModeToggle" class="btn-secondary btn-small" onclick="toggleDarkMode()" title="Tryb ciemny">🌙</button>
     </div>
     <div id="authStatus" style="margin-bottom:10px;"></div>
     <div id="pageLanding">
@@ -701,6 +757,22 @@ function showPage(page) {
   document.getElementById('pageCalculator').classList.toggle('hidden', page !== 'calculator');
   document.getElementById('pageFeedback').classList.toggle('hidden', page !== 'feedback');
 }
+function toggleDarkMode() {
+  const html = document.documentElement;
+  const isDark = html.getAttribute('data-theme') === 'dark';
+  html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+  localStorage.setItem('theme', isDark ? 'light' : 'dark');
+  document.getElementById('darkModeToggle').textContent = isDark ? '🌙' : '☀️';
+}
+// Restore theme on load
+(function() {
+  const saved = localStorage.getItem('theme');
+  if (saved === 'dark') {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    const btn = document.getElementById('darkModeToggle');
+    if (btn) btn.textContent = '☀️';
+  }
+})();
 function openSidebar() {
   const sidebar = document.getElementById('sidebarQuotes');
   const btn = document.getElementById('showQuotesBtn');
