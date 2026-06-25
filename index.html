@@ -43,21 +43,24 @@
   }
   /* Prawa kolumna - wyceny (overlay drawer) */
   .sidebar-right {
-    width: 45%;
-    min-width: 420px;
+    width: 320px;
+    min-width: 320px;
     background: var(--card);
     border-left: 1px solid var(--border);
     display: flex;
     flex-direction: column;
-    position: absolute;
-    right: 0;
+    position: sticky;
     top: 0;
-    height: 100%;
+    height: 100vh;
+    overflow-y: auto;
     z-index: 10;
     transition: transform 0.3s ease;
   }
   .sidebar-right.collapsed {
     transform: translateX(100%);
+    position: fixed;
+    right: 0;
+    top: 0;
   }
   .sidebar-header {
     display: flex;
@@ -357,7 +360,7 @@
           <button id="btnOverprint" class="btn-primary active" onclick="setMode('overprint')">OVERPRINT</button>
           <button id="btnFullprint" class="btn-secondary" onclick="setMode('fullprint')">FULLPRINT</button>
         </div>
-        <div class="toggles">
+        <div class="toggles" style="display:none;">
           <label><input type="checkbox" id="chkLaczne"> Łączne ilości</label>
           <label><input type="checkbox" id="chkAutoStrony"> Auto strony z maila</label>
           <label><input type="checkbox" id="chkAutoKolor"> Auto kolor z maila</label>
