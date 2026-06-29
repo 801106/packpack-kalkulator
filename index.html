@@ -565,6 +565,7 @@
         <textarea id="teresaInput" placeholder="Wklej odpowiedź (z ceną USD)..." style="min-height:100px"></textarea>
         <div class="actions">
           <button class="btn-success btn-small" onclick="calcTeresa()">Przelicz</button>
+          <button class="btn-secondary btn-small" onclick="printTeresaPdf()" id="teresaPdfBtn" style="display:none;">🖨️ PDF</button>
         </div>
         <div id="teresaResults" class="results"></div>
       </div>
@@ -1155,7 +1156,117 @@ function sendWhatsApp(target) {
   const url = 'https://wa.me/' + phone + '?text=' + encodeURIComponent(text);
   window.open(url, '_blank');
 }
-function calcTeresa() { const text = document.getElementById('teresaInput').value; if (!text.trim()) { showStatus('fullprint','Wklej odpowiedź.','err'); return; } const usdRate = parseFloat(document.getElementById('rateUsd').value) || 4.05; let unitUsd = 0; const patterns = [/USD\s*[\$]?\s*(\d+[.,]?\d*)\s*\/?\s*(pc|piece|szt|unit|per)/i, /(pc|piece|szt|unit)\s*[=:]\s*\$?\s*(\d+[.,]?\d*)/i, /price\s*(per)?\s*[:=]?\s*\$?\s*(\d+[.,]?\d*)/i, /\$\s*(\d+[.,]?\d*)\s*(USD)?/i, /(\d+[.,]?\d*)\s*USD\s*\/?\s*(pc|piece|szt|unit)/i, /cost\s*[:=]?\s*\$?\s*(\d+[.,]?\d*)/i]; for (const re of patterns) { const m = text.match(re); if (m) { const val = parseFloat(m[m.length-1].replace(',','.')); if (!isNaN(val) && val > 0) { unitUsd = val; break; } } } let shipUsd = 0; const sm = text.match(/(shipping|freight|delivery|transport)\s*[:=]?\s*\$?\s*(\d+[.,]?\d*)/i); if (sm) shipUsd = parseFloat(sm[2].replace(',','.')) || 0; let qty = 0; const qm = text.match(/(\d+)\s*(pcs|pieces|szt|units|qty)/i); if (qm) qty = parseInt(qm[1], 10) || 0; if (!qty) { const cards = document.querySelectorAll('#fullprintItems .item-card'); cards.forEach(c => qty += parseInt(c.querySelector('.fp-qty').value,10) || 0); } if (!qty) qty = 1; const unitPln = unitUsd * usdRate; const shipPerUnit = qty > 0 ? (shipUsd * usdRate) / qty : 0; const marginPln = getFullprintMargin(qty); const finalUnit = unitPln + shipPerUnit + marginPln; const totalPln = finalUnit * qty; let html = '<table class="result-table"><tbody>' + `<tr><td>Cena zakupu / szt (USD)</td><td>${unitUsd.toFixed(4)} USD</td></tr>` + `<tr><td>Kurs USD/PLN</td><td>${usdRate.toFixed(2)}</td></tr>` + `<tr><td>Cena zakupu / szt (PLN)</td><td>${unitPln.toFixed(2)} PLN</td></tr>` + `<tr><td>Dostawa / szt (PLN)</td><td>${shipPerUnit.toFixed(2)} PLN</td></tr>` + `<tr><td>Marża / szt (PLN)</td><td>${marginPln.toFixed(2)} PLN</td></tr>` + `<tr><td><strong>Cena finalna / szt</strong></td><td><strong>${finalUnit.toFixed(2)} PLN</strong></td></tr>` + `<tr><td><strong>Wartość całkowita</strong></td><td><strong>${totalPln.toFixed(2)} PLN</strong></td></tr>` + '</tbody></table>'; if (unitUsd === 0) html = '<div class="status err">Nie wykryto ceny USD.</div>' + html; document.getElementById('teresaResults').innerHTML = html; }
+function calcTeresa() {
+  const text = document.getElementById('teresaInput').value;
+  if (!text.trim()) { showStatus('fullprint','Wklej odpowiedź.','err'); return; }
+  const usdRate = parseFloat(document.getElementById('rateUsd').value) || 4.05;
+  const nbpDate = document.getElementById('rateStatus')?.textContent || 'NBP';
+  
+  const quoteMatch = text.match(/QUOTE\s*#?\s*([^\n]+)/i);
+  const quoteName = quoteMatch ? quoteMatch[1].trim() : 'Wycena dostawcy';
+  
+  const materialMatch = text.match(/(?:material|film)[:\s]*([^\n]+)/i);
+  const material = materialMatch ? materialMatch[1].trim() : 'Podany w wycenie';
+  
+  const pouchMatch = text.match(/(?:pouch type|type)[:\s]*([^\n]+)/i);
+  const pouchType = pouchMatch ? pouchMatch[1].trim() : 'Doypack';
+  
+  const printMatch = text.match(/(?:printing|print)[:\s]*([^\n]+)/i);
+  const printing = printMatch ? printMatch[1].trim() : 'Fullprint';
+  
+  let mainQty = 0;
+  const qtyMatch = text.match(/(?:total\s*)?quantity\s*[:=]?\s*(\d[\d\s,]*)\s*(?:pcs|pieces|szt|units)?/i);
+  if (qtyMatch) mainQty = parseInt(qtyMatch[1].replace(/[\s,]/g, ''), 10) || 0;
+  
+  const skuMatch = text.match(/(\d+)\s*x\s*(\d+)\s*(?:pcs|pieces|szt)/i);
+  if (skuMatch && !mainQty) {
+    const skus = parseInt(skuMatch[1], 10);
+    const perSku = parseInt(skuMatch[2], 10);
+    mainQty = skus * perSku;
+  }
+  if (!mainQty) mainQty = 1;
+  
+  let mainPrice = 0;
+  const priceMatches = [...text.matchAll(/\$?\s*(\d+[.,]\d+)\s*(?:USD)?\s*\/?\s*(?:pc|pcs|piece|szt|unit)/gi)];
+  priceMatches.forEach(m => {
+    const val = parseFloat(m[1].replace(',', '.'));
+    if (!isNaN(val) && val > 0) mainPrice = val;
+  });
+  
+  let mainShip = 0;
+  const shipMatches = [...text.matchAll(/(?:shipping|freight|delivery|transport)\s*[:\s]*(?:ddp\s*)?(?:to\s+\w+\s*)?:?\s*\$?\s*(\d[\d\s,]*)/gi)];
+  shipMatches.forEach(m => {
+    const val = parseFloat(m[1].replace(/[\s,]/g, '').replace(',', '.'));
+    if (!isNaN(val) && val > 0) mainShip = val;
+  });
+  
+  function getMargin(qty) {
+    if (qty <= 500) return 1.00;
+    if (qty <= 1000) return 0.90;
+    if (qty <= 5000) return 0.80;
+    if (qty <= 10000) return 0.70;
+    if (qty <= 15000) return 0.60;
+    if (qty <= 20000) return 0.55;
+    if (qty <= 50000) return 0.50;
+    return 0.40;
+  }
+  function getMarginLabel(qty) {
+    if (qty <= 500) return 'próg 1-500 szt';
+    if (qty <= 1000) return 'próg 501-1000 szt';
+    if (qty <= 5000) return 'próg 1001-5000 szt';
+    if (qty <= 10000) return 'próg 5001-10000 szt';
+    if (qty <= 15000) return 'próg 10001-15000 szt';
+    if (qty <= 20000) return 'próg 15001-20000 szt';
+    if (qty <= 50000) return 'próg 20001-50000 szt';
+    return 'próg 50000+ szt';
+  }
+  
+  const margin = getMargin(mainQty);
+  const shipPerPcs = mainShip / mainQty;
+  const purchaseCostUsd = mainPrice + shipPerPcs;
+  const purchaseCostPln = purchaseCostUsd * usdRate;
+  const finalPrice = purchaseCostPln + margin;
+  const totalFinal = finalPrice * mainQty;
+  
+  let html = '<div style="margin-bottom:20px;">';
+  html += `<h4 style="color:var(--accent);margin-bottom:8px;">${quoteName}</h4>`;
+  html += `<p style="font-size:0.85rem;color:#666;margin-bottom:12px;">${pouchType} | ${printing} | ${material}</p>`;
+  html += `<div style="background:var(--card);border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:var(--shadow);">`;
+  html += '<table class="result-table" style="margin-top:0;"><tbody>';
+  html += `<tr><td><strong>Ilość</strong></td><td><strong>${mainQty.toLocaleString('pl-PL')} szt</strong></td></tr>`;
+  html += `<tr><td>Cena opakowania</td><td>$${mainPrice.toFixed(4)} / szt</td></tr>`;
+  if (mainShip > 0) {
+    html += `<tr><td>Dostawa (Air DDP)</td><td>$${mainShip.toFixed(2)} ÷ ${mainQty} = $${shipPerPcs.toFixed(4)} / szt</td></tr>`;
+  }
+  html += `<tr><td>Koszt zakupu USD</td><td>$${purchaseCostUsd.toFixed(4)} / szt</td></tr>`;
+  html += `<tr><td>Kurs USD/PLN</td><td>${usdRate.toFixed(4)} (${nbpDate})</td></tr>`;
+  html += `<tr><td>Koszt zakupu PLN</td><td>${purchaseCostPln.toFixed(2)} PLN / szt</td></tr>`;
+  html += `<tr><td>Marża</td><td>${margin.toFixed(2)} PLN / szt (${getMarginLabel(mainQty)})</td></tr>`;
+  html += `<tr style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;font-weight:700;"><td>CENA FINALNA</td><td>${finalPrice.toFixed(2)} PLN / szt</td></tr>`;
+  html += `<tr style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;font-weight:700;"><td>WARTOŚĆ CAŁKOWITA</td><td>${totalFinal.toFixed(2)} PLN</td></tr>`;
+  html += '</tbody></table>';
+  html += '</div>';
+  html += '<div style="font-size:0.8rem;color:#666;margin-top:12px;">';
+  html += '<p><strong>Warunki:</strong></p>';
+  html += '<ul style="margin:4px 0;padding-left:16px;">';
+  html += '<li>Cena netto, bez VAT</li>';
+  html += '<li>Dostawa: DDP (Air)</li>';
+  html += '<li>Ważność: 7 dni</li>';
+  html += '</ul>';
+  html += '</div>';
+  html += '</div>';
+  
+  document.getElementById('fullprintResults').innerHTML = html;
+  document.getElementById('teresaPdfBtn').style.display = 'inline-block';
+}
+function printTeresaPdf() {
+  const resultsDiv = document.getElementById('fullprintResults');
+  if (!resultsDiv.innerHTML.trim()) return;
+  const now = new Date().toLocaleString('pl-PL');
+  const logoSvg = `<svg width="120" height="70" viewBox="0 0 120 70" xmlns="http://www.w3.org/2000/svg"><style>.p{font-family:Arial,sans-serif;font-weight:800;font-size:28px;letter-spacing:-0.5px;}</style><text x="0" y="30" class="p" fill="#1a1a1a">pack</text><text x="0" y="62" class="p" fill="#1a1a1a">pack</text></svg>`;
+  const html = `<!DOCTYPE html><html lang="pl"><head><meta charset="UTF-8"><title>Wycena dostawcy — PackPack</title><style>@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');body{font-family:'Inter',Arial,sans-serif;margin:0;padding:24px 32px;color:#1a1a1a;background:#fff;}.header{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #6366f1;padding-bottom:16px;margin-bottom:20px;}.title-block{text-align:right;}.title-block h1{margin:0;font-size:18px;font-weight:700;}table{width:100%;border-collapse:collapse;font-size:9pt;margin-top:12px;}th,td{border:1px solid #ddd;padding:6px 8px;text-align:left;}th{background:#f5f5f5;font-weight:600;font-size:8.5pt;color:#333;}tr:nth-child(even){background:#f9f9f9;}.summary{font-weight:700;font-size:13pt;margin-top:14px;color:#6366f1;text-align:right;}.footer{margin-top:40px;border-top:1px solid #eee;padding-top:12px;font-size:8pt;color:#666;display:flex;justify-content:space-between;}</style></head><body><div class="header">${logoSvg}<div class="title-block"><h1>Wycena od dostawcy</h1><p>Data: ${now}</p></div></div>${resultsDiv.innerHTML}<div class="footer"><div><strong>Pack Pack Sp. z o.o.</strong><br>NIP: 7272845933 | KRS: 0000867114</div><div style="text-align:right">666 038 495 | 666 374 391<br>kontakt@packpack.pl | www.packpack.pl</div></div></body></html>`;
+  const iframe = document.createElement('iframe'); iframe.style.position='fixed'; iframe.style.top='-9999px'; iframe.style.left='-9999px'; iframe.style.width='1px'; iframe.style.height='1px'; document.body.appendChild(iframe); iframe.contentWindow.document.open(); iframe.contentWindow.document.write(html); iframe.contentWindow.document.close(); setTimeout(() => { iframe.contentWindow.focus(); iframe.contentWindow.print(); setTimeout(() => { if (iframe.parentNode) iframe.parentNode.removeChild(iframe); }, 2000); }, 500);
+}
 /* ==================== PARSOWANIE MAILA ==================== */
 function parseMail() { const text = document.getElementById('mailInput').value; if (!text.trim()) { showStatus('mail','Wklej tekst maila.','err'); return; } const isForeign = detectForeign(text); if (isForeign) showStatus('mail','Klient zagraniczny — auto EUR.','info'); else clearStatus('mail'); const qtyMatches = [...text.matchAll(/\b(\d{1,6})\s*(szt|sztuk|szt\.|pieces|pcs|pc|units|x)\b/gi)]; const sizeMatches = [...text.matchAll(/\b(100|250|500|750|1000|2000|3000)\s*(ml|g|ml)\b/gi)]; const parsed = []; qtyMatches.forEach((qm, i) => { const qty = parseInt(qm[1], 10); const idx = qm.index; let size = '250ml'; let dist = Infinity; sizeMatches.forEach(sm => { const d = Math.abs(sm.index - idx); if (d < dist) { dist = d; size = sm[1] + 'ml'; } }); const ctx = text.substring(Math.max(0, idx-100), Math.min(text.length, idx+100)).toLowerCase(); let product = 'Doypack Papier Kraft'; if (ctx.includes('biały') || ctx.includes('bialy') || ctx.includes('white')) { if (ctx.includes('aluminium') || ctx.includes('aluminum')) product = 'Doypack Biały Papier Kraft Aluminium'; else if (ctx.includes('okien') || ctx.includes('window')) product = 'Doypack Biały Papier Kraft z okienkiem'; else if (ctx.includes('biodegrad')) product = 'Doypack Biodegradowalny Biały Papier Kraft'; else product = 'Doypack Biały Papier Kraft'; } else { if (ctx.includes('aluminium') || ctx.includes('aluminum')) product = 'Doypack Papier Kraft Aluminium'; else if (ctx.includes('okien') || ctx.includes('window')) product = 'Doypack Papier Kraft z okienkiem'; else if (ctx.includes('kompost')) product = 'Doypack Kompostowalny Papier Kraft'; } let print = 'black'; if (ctx.includes('cmyk') || ctx.includes('full-color') || ctx.includes('full color') || ctx.includes('kolor') || ctx.includes('color')) print = 'cmyk'; let sides = '1'; if (ctx.includes('dwustron') || ctx.includes('both') || ctx.includes('two side') || ctx.includes('2-side')) sides = '2'; parsed.push({ qty, size, product, print, sides }); }); if (!parsed.length) { showStatus('mail','Nie wykryto pozycji.','err'); return; } if (mode === 'overprint') { parsed.forEach(p => addOverprintItem(p)); } else { parsed.forEach(p => addFullprintItem({ qty: p.qty, size: p.size, material: 'PET 12 / PE 70-100' })); } showStatus('mail',`Wykryto ${parsed.length} pozycji.`,'ok'); }
 function detectForeign(text) { const t = text.toLowerCase(); return /\b(germany|deutschland|united kingdom|uk|england|\.de\b|\.uk\b|\.com\b|france|italy|spain|\.fr\b|\.it\b|\.es\b)/.test(t); }
